@@ -1,0 +1,280 @@
+Storage 
+{
+	{ Format 1.33 }
+	{ GeneratedFrom TSQD-version-2.20 }
+	{ WrittenBy xxx }
+	{ WrittenOn "" }
+}
+
+Document 
+{
+	{ Type "Sequence Diagram" }
+	{ Name act_-_ls_unshared.sqd }
+	{ Author xxx }
+	{ CreatedOn "" }
+	{ Annotation "" }
+}
+
+Page 
+{
+	{ PageOrientation Portrait }
+	{ PageSize A4 }
+	{ ShowHeaders False }
+	{ ShowFooters False }
+	{ ShowNumbers False }
+}
+
+Scale 
+{
+	{ ScaleValue 1 }
+}
+
+# GRAPH NODES
+
+CBDObjectNode 4
+{
+	{ Name ":uplfs" }
+	{ Annotation "" }
+	{ Parent 0 }
+	{ Index "" }
+	{ Stereotype "<< - >>" }
+	{ Properties "{ - }" }
+	{ Anchors 4 }
+	{ Anchor 420 4 }
+	{ Anchor 330 5 }
+	{ Anchor 390 5 }
+	{ Anchor 360 4 }
+}
+
+CBDObjectNode 7
+{
+	{ Name ":dplc" }
+	{ Annotation "" }
+	{ Parent 0 }
+	{ Index "" }
+	{ Stereotype "<< - >>" }
+	{ Properties "{ - }" }
+	{ Anchors 2 }
+	{ Anchor 390 4 }
+	{ Anchor 360 5 }
+}
+
+CBDObjectNode 32
+{
+	{ Name ":kplfs" }
+	{ Annotation "" }
+	{ Parent 0 }
+	{ Index "" }
+	{ Stereotype "<< - >>" }
+	{ Properties "{ - }" }
+	{ Anchors 2 }
+	{ Anchor 420 5 }
+	{ Anchor 330 4 }
+}
+
+# GRAPH EDGES
+
+CBDObjectLinkEdge 15
+{
+	{ Name "listFiles(node, slice, path)" }
+	{ Annotation "" }
+	{ Parent 0 }
+	{ Subject1 32 }
+	{ Subject2 4 }
+	{ Anchor1 330 4 }
+	{ Anchor2 330 5 }
+}
+
+CBDObjectLinkEdge 20
+{
+	{ Name "listFiles(slice, path)" }
+	{ Annotation "" }
+	{ Parent 0 }
+	{ Subject1 4 }
+	{ Subject2 7 }
+	{ Anchor1 360 4 }
+	{ Anchor2 360 5 }
+}
+
+CBDObjectLinkEdge 21
+{
+	{ Name "file_name[]" }
+	{ Annotation "" }
+	{ Parent 0 }
+	{ Subject1 7 }
+	{ Subject2 4 }
+	{ Anchor1 390 4 }
+	{ Anchor2 390 5 }
+}
+
+CBDObjectLinkEdge 22
+{
+	{ Name "file_name[]" }
+	{ Annotation "" }
+	{ Parent 0 }
+	{ Subject1 4 }
+	{ Subject2 32 }
+	{ Anchor1 420 4 }
+	{ Anchor2 420 5 }
+}
+
+# VIEWS AND GRAPHICAL SHAPES
+
+View 1
+{
+	{ Index "0" }
+	{ Parent 0 }
+}
+
+SSDSingleObjectBox 8
+{
+	{ View 1 }
+	{ Subject 4 }
+	{ Position 310 280 }
+	{ Size 80 40 }
+	{ Color "black" }
+	{ LineWidth 1 }
+	{ LineStyle Solid }
+	{ FillStyle Unfilled }
+	{ FillColor "white" }
+	{ FixedName False }
+	{ Font "-*-helvetica-medium-r-normal--10*" }
+	{ TextAlignment Center }
+	{ TextColor "black" }
+	{ NameUnderlined True }
+	{ EndPosition 310 434 }
+	{ Destructive 0 }
+}
+
+SSDSingleObjectBox 12
+{
+	{ View 1 }
+	{ Subject 7 }
+	{ Position 440 280 }
+	{ Size 80 40 }
+	{ Color "black" }
+	{ LineWidth 1 }
+	{ LineStyle Solid }
+	{ FillStyle Unfilled }
+	{ FillColor "white" }
+	{ FixedName False }
+	{ Font "-*-helvetica-medium-r-normal--10*" }
+	{ TextAlignment Center }
+	{ TextColor "black" }
+	{ NameUnderlined True }
+	{ EndPosition 440 412 }
+	{ Destructive 0 }
+}
+
+T4Line 23
+{
+	{ View 1 }
+	{ Subject 15 }
+	{ FromShape 33 }
+	{ ToShape 8 }
+	{ Curved False }
+	{ End1 Empty }
+	{ End2 FilledArrow }
+	{ Points 2 }
+	{ Point 140 330 }
+	{ Point 310 330 }
+	{ NamePosition 225 320 }
+	{ Color "black" }
+	{ LineWidth 1 }
+	{ LineStyle Solid }
+	{ FixedName False }
+	{ Font "-*-helvetica-medium-r-normal--10*" }
+	{ TextAlignment Center }
+	{ TextColor "black" }
+	{ NameUnderlined False }
+}
+
+T4Line 28
+{
+	{ View 1 }
+	{ Subject 20 }
+	{ FromShape 8 }
+	{ ToShape 12 }
+	{ Curved False }
+	{ End1 Empty }
+	{ End2 FilledArrow }
+	{ Points 2 }
+	{ Point 310 360 }
+	{ Point 440 360 }
+	{ NamePosition 375 350 }
+	{ Color "black" }
+	{ LineWidth 1 }
+	{ LineStyle Solid }
+	{ FixedName False }
+	{ Font "-*-helvetica-medium-r-normal--10*" }
+	{ TextAlignment Center }
+	{ TextColor "black" }
+	{ NameUnderlined False }
+}
+
+T4Line 29
+{
+	{ View 1 }
+	{ Subject 21 }
+	{ FromShape 12 }
+	{ ToShape 8 }
+	{ Curved False }
+	{ End1 Empty }
+	{ End2 FilledArrow }
+	{ Points 2 }
+	{ Point 440 390 }
+	{ Point 310 390 }
+	{ NamePosition 375 380 }
+	{ Color "black" }
+	{ LineWidth 1 }
+	{ LineStyle Solid }
+	{ FixedName False }
+	{ Font "-*-helvetica-medium-r-normal--10*" }
+	{ TextAlignment Center }
+	{ TextColor "black" }
+	{ NameUnderlined False }
+}
+
+T4Line 30
+{
+	{ View 1 }
+	{ Subject 22 }
+	{ FromShape 8 }
+	{ ToShape 33 }
+	{ Curved False }
+	{ End1 Empty }
+	{ End2 FilledArrow }
+	{ Points 2 }
+	{ Point 310 420 }
+	{ Point 140 420 }
+	{ NamePosition 225 410 }
+	{ Color "black" }
+	{ LineWidth 1 }
+	{ LineStyle Solid }
+	{ FixedName False }
+	{ Font "-*-helvetica-medium-r-normal--10*" }
+	{ TextAlignment Center }
+	{ TextColor "black" }
+	{ NameUnderlined False }
+}
+
+SSDSingleObjectBox 33
+{
+	{ View 1 }
+	{ Subject 32 }
+	{ Position 140 280 }
+	{ Size 80 40 }
+	{ Color "black" }
+	{ LineWidth 1 }
+	{ LineStyle Solid }
+	{ FillStyle Unfilled }
+	{ FillColor "white" }
+	{ FixedName False }
+	{ Font "-*-helvetica-medium-r-normal--10*" }
+	{ TextAlignment Center }
+	{ TextColor "black" }
+	{ NameUnderlined True }
+	{ EndPosition 140 436 }
+	{ Destructive 0 }
+}
+

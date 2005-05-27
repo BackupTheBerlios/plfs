@@ -1,0 +1,315 @@
+\chapter{Diseño de los componentes}
+
+\textbf{\textit{En este capítulo definimos las principales funcionalidades que
+deben implementar cada uno de los componentes.}}
+
+
+
+\section{\kplfs}
+Este módulo implementa la interfaz del VFS, y las operaciones que permite las
+hemos descrito en el capítulo anterior en el apartado de Lógica de
+Desplegamiento 2.5.
+
+% TODO(?): invalidate
+
+
+
+\section{\uplfs}
+
+Las operaciones que \uplfs ofrece, además de las especificadas en el módulo
+\pldb para las que hace de intermediario, son las siguientes:
+
+%TODO: es solo esto?
+\begin{description}
+	\item[\texttt{execute(component, operation, \ldots)}] :\\
+		Llama a la función \texttt{operation} del componente
+		\texttt{component} con los parámetros extra que se indiquen (en caso
+		de indicar alguno).
+\end{description}
+
+
+
+\section{\dpld}
+
+Las operaciones que \dpld ofrece son las siguientes:
+
+% TODO: faltan las credenciales de autentificacion, o mejor un paso previo de
+% autentificación?!?!?!?!
+% TODO(~): faltan los parametros de que desplegar, etc
+% TODO(~): explicar fichero de comandos etc otra vez? 		NOO!!
+% TODO(~): poner los resultados de las ops
+\begin{description}
+	\item[\texttt{void deployAppToSlice (slice\_name, files[], script, key,
+		passwd,...)}] :\\
+		Realiza la comunicación con el componente \umcc para desplegar
+		una aplicación (files) a través de la red \umcr en el grupo
+		indicado por el slice\_name. Para ello también requerirá el
+		script de inicialización, y la clave y password de ssh del
+		slice.
+		% NOTA: La operación no puede devolver resultado de éxito,
+		% puesto que la implementación de ACKS en Multicast tiene
+		% problemas de escalabilidad, y por lo que hace a los NACKS
+		% no creo que sea muy bueno mantener dpld esperando, CUANTO
+		%TIEMPO? a ver si recibe algun NACK
+
+	\item[\texttt{ void deployAppToNode (slice\_name,
+		node\_name,files,script, key, passwd) }] : \\
+		Lo mismo que deployAppToSlice pero hacia un nodo concreto.
+		Útil, si se añade un nodo a un slice al que se ha realizado ya
+		el desplegamiento.
+
+	\item[\texttt{void addNodeToSlice (slice\_name, node\_name)}] :\\
+		Crea el directorio que representa al nodo en el sistema de
+		ficheros y posteriormente ejecuta \texttt{deployAppToNode}.
+
+	\item[\texttt{registerToDplc (node\_name, slice\_name)}] :\\
+		Se registra el nodo de \dpld como oyente de los cambios que se
+		producen en un slice de un nodo concreto.
+		% TODO(?): se puede utilizar un grupo de oyentes a cambios en
+		% grupos de dplc, asi no hace falta el registro...
+
+	\item[\texttt{invalidateObj (slice\_name, name)}] :\\
+		% TODO(?): utilizar identificador de obj diferente del path?
+		% hace falta nombre del slice? (path completo)
+		Invalida un objeto del sistema de ficheros (un fichero o un
+		directorio).
+		%NOTA: de que puede servir invalidar un objeto del FS?
+
+
+		% TODO(?): validaciones? temporalidad?     ES UTIL PLANTEARSELO?
+\end{description}
+
+
+
+\section{\pldb}
+
+\pldb permite acceder a información relativa a la administración de slices y
+nodos de PlanetLab.
+
+En concreto, las operaciones que ofrece (API), son:
+
+\begin{description}
+	\item[\texttt{getSlices}] :\\
+		Permite obtener la lista de slices que se han dado de alta en PlanetLab
+
+	\item[\texttt{getNodes}] :\\
+		Permite obtener la lista de nodos que se han dado de alta en PlanetLab
+
+	\item[\texttt{getSlice (slice\_name)}] :\\
+		Permite obtener información de un slice
+
+	\item[\texttt{getNode (node\_name)}] :\\
+		Permite obtener información de un nodo
+
+	\item[\texttt{getSliceNodes (slice\_name)}] :\\
+		Permite obtener los nodos que hay en un slice
+
+	\item[\texttt{getNodeSlices (node\_name)}] :\\
+		Permite obtener los slices de un nodo
+
+	\item[\texttt{getSliceNode (slice\_name, node\_name)}] :\\
+		Permite obtener información de un nodo de un slice
+
+	\item[\texttt{getNodeSlice (node\_name, slice\_name)}] :\\
+		Permite obtener información de un slice de un nodo
+
+	\item[\texttt{addSlice (slice\_name)}] :\\
+		Permite añadir un slice
+
+	\item[\texttt{addNode (node\_name)}] :\\
+		Permite añadir un nodo
+
+	\item[\texttt{addSliceNode (slice\_name, node\_name)}] :\\
+		Permite añadir un nodo en un slice
+
+	\item[\texttt{removeSlice (slice\_name)}] :\\
+		Permite eliminar un slice
+
+	\item[\texttt{removeNode (node\_name)}] :\\
+		Permite eliminar un nodo
+
+	\item[\texttt{removeSliceNode (slice\_name, node\_name)}] :\\
+		Permite eliminar un nodo de un slice
+\end{description}
+
+Para obtener toda esta información, hace falta utilizar la API que ofrece
+PlanetLab Central \cite{PLC}.
+
+
+
+\section{\umcc}
+
+Éste es el módulo cliente de la red multicast, básicamente tiene dos
+funciones:
+
+\begin{description}
+	\item Enviar los datos a desplegar al nodo \umcr más cercano.
+
+	\item Recibir los datos a desplegar y hacerlos llegar al módulo dplc.
+\end{description}
+
+El primer caso, se da cuando \dpld ordena el desplegamiento de una
+aplicación/servicio hacia un slice destino. En este caso deberá comunicarse
+con el módulo umcr más cercano para comunicarle los datos necesarios.
+El segundo caso, se da cuando un nodo \umcr le comunica que se debe desplegar
+una aplicación/servicio en el nodo dónde \umcc reside, en este caso deberá
+comunicare con el módulo \dplc para hacerle llegar los datos de desplegamiento.
+
+De modo que las operaciones que ofrece, son:
+
+% TODO(~): seguridad a la hora de hacer cambios? umcc va en la máquina de
+% administracion (se puede modificar lo que se quiera)      .... I????
+%TODO(?): ``dns''?  ------- PQ EL GRUPID NO POT SER SLICE_NAME?
+%			    TB SERVIRIA SI VOLEM ENVIAR A SLICE
+%			    DPLD WARNINGS
+\begin{description}
+	\item[\texttt{group\_id getGroup (group\_name)}] :\\
+		Permite obtener el identificador, dentro de la red \umc, de un grupo.
+
+	\item[\texttt{setOptions (group\_id, options[])}] :\\
+		%TODO(?): QUE FA AIXO??
+		%TODO(?): necesario? depende del soft multicast de debajo
+
+	\item[\texttt{sendData (group\_id, data)}] :\\
+		Permite enviar datos a un grupo
+
+		%TODO(~): addGroup / deleteGroup ?
+
+	\item[\texttt{join (group\_name, node\_name)}] :\\
+		%TODO(?): hace falta el nombre o ya va bien por remitente?
+		%TODO(?): cómo hacer el join de otro?
+		Permite añadir un nodo a un grupo multicast
+
+	\item[\texttt{delete (group\_id, node\_name)}] :\\
+		%TODO(?): hace falta el nombre o ya va bien por remitente?
+		%TODO(?): cómo hacer el delete de otro?
+		Permite eliminar un nodo de un grupo multicast
+
+	% TODO: Esto no va aqui!!!
+	\item[\texttt{deployApp(...)}] :\\
+		Pasa los ficheros de desplegamiento a \dplc.
+\end{description}
+
+La ventaja de éste módulo es que es totalmente inocuo, por lo que se puede
+utilizar la arquitectura de \umc (\umcc + \umcr) en cualquier aplicación, y
+permite que se puedan utilizar otros proyectos ya realizados.
+
+% TODO(~): estudiarlo!!!
+% El punto que aún no hemos aclarado es si el propio identificador de grupo
+% multicast será el identificador de slice (VOTO POR ELLO!!!!!!!!!!!) o algun
+% otro de más genérico (que requeriría una nueva capa de administración de
+% grupos multicast).
+%
+% Depende del software de multicast que se utilize! (araneola)
+
+
+
+\section{\umcr}
+
+Estos nodos se encargan de hacer la transimisión multicast, con tal de hacer
+llegar los datos a los \umcc del grupo de destino.
+Asumiremos que estos nodos pertencen a un slice administrativo en el cual no se
+realizan modificaciones o configuraciones maliciosas.
+
+Cómo todos los accesos a la red multicast se hacen a traves de \umcc, se puede
+fácilmente utilizar una implementación ya existente de una red overlay
+multicast en modo usuario, como es Araneola \cite{Araneola}.
+
+%TODO(!!!): EXPLICAR ARANEAOLA SI ES LA UNICA SOLUCIO
+%TODO: Operaciones?
+
+
+
+\section{\dplc}
+
+% TODO: pertenece a un slice administrado correctamente (no habra
+% modificaciones ni configuraciones maliciosas)
+
+Éste módulo, situado en cada una de las máquinas clientes (o receptoras de las
+aplicaciones de las que queremos hacer el desplegamiento), se sitúa en un
+slice propio (donde estarán todos los nodos con éste módulo), y al recibir los
+datos de \umcc accederá a sí mismo por ssh con tal de poner los ficheros al
+slice destino y seguidamente ejecutar el shell script asociado, en caso de
+estar presente.
+
+Para realizar esta conexión por ssh, el nodo del slice dplc necesita los datos
+de clave y password ssh para que \dplc pueda hacer una conexión a la propia
+máquina y acceder a la máquina virtual asociada al slice de destino.
+
+Para ello, se podría pensar en varias soluciones, como son:
+
+\begin{description}
+	\item Realizar una preautentificación, en la que dplc se autentifica con los
+		slices a los que se llevará acabo el deployment de aplicaciones, de modo que en
+		las comunicaciones no haga falta realizar el envío de clave y password y tampoco
+		tener que preocuparse de como hacerlo de forma segura.
+
+	\item Que en cada comunicación se envíen, además de los ficheros, los datos de
+		autentificación (clave ssh y password).
+
+		% TODO(~): pre-autentificacion? JUSTIFICAR PERQUE HEM FET LA SEGONA :-S
+\end{description}
+
+De modo que las operaciones que debe implementar este módulo son las
+siguientes:
+
+% TODO(?): seguridad?
+\begin{description}
+	\item[\texttt{invalidateObj (slice\_name, name)}] :\\
+		% TODO(~): utilizar identificador de obj diferente del path?
+		% hace falta nombre del slice? (path completo) <<-- PATH COMPLET
+		Invalida un objeto del sistema de ficheros (un fichero o un
+		directorio)
+
+		% TODO(?): validaciones? temporalidad?
+
+	\item[\texttt{deployAppToSlice (slice\_name, ...)}] :\\
+		Realiza la conexión por ssh al slice destino, despliega la
+		aplicación y ejecuta el script de inicialización.
+
+	\item[\texttt{registerToDplc (node\_name, slice\_name)}] :\\
+		% TODO ??????? No seria...
+		%
+		% Un nodo se registra en \dplc como integrante del slice
+		%slice_name al que se va realizar desplegamiento de
+		%aplicaciones.
+		%
+		Se registra el nodo de \dpld como oyente de los cambios que
+		se producen en un slice de un nodo concreto.
+
+
+	% TODO: Esto no va aqui!!!
+	\item[\texttt{stopAppInSlice (slice\_name)}] :
+		% TODO  caldria poder fer stop (ex: delete de node)
+\end{description}
+
+% TODO(~): señalar los triggers de join / delete de los grupos
+
+%Cuando se añade un nodo a un slice en el que se realiza desplegamiento, se
+%tiene que informar al módulo \dpld, puesto que es posible que ya se hubiera
+%realizado un desplagamiento previo a dicho slice y \dpld tenga que realizar un
+%deployment al nodo en concreto.
+
+%Para ello hemos pensado en un protocolo de "warnings" en el que \dplc realizara
+%comunicaciones multicast hacia los nodos \dpld, comunicándoles:
+%	- nodo
+%	- slice
+
+
+% ===>>> LA QUAL COSA ACABARIA AMB L'OPERACIO QUE HE AFEGIT addNodeToSlice de
+%	dpld
+
+
+
+\section{\famon}
+
+Éste módulo está situado en las máquinas clientes de la red, y se encarga de
+monitorizar los ficheros que han sido desplegados en un nodo de un slice.
+
+Para ello debe haber una instancia corriendo en cada máquina virtual que
+corresponda a un slice que funciona a traves de \plfs.
+
+% TODO: operaciones de viliar / dejar paths concretos?
+
+% TODO: buscar un buen programa que lo haga => famd?
+

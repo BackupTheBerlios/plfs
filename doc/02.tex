@@ -1,0 +1,467 @@
+\chapter{Arquitectura del sistema}
+
+\textbf{\textit{En este capítulo comentamos la arquitectura general del
+sistema, los componentes necesarios, el sistema de ficheros y las operaciones
+que debe implementar.}}
+
+
+
+\section{Componentes}
+
+En este apartado mostraremos un esquema inicial de los principales
+componentes que necesitaría el sistema presentado (figura
+\ref{fig:arquitectura}):
+
+\begin{description}
+	\item [\kplfs:] PlanetLab File System (Kernel-mode Side)\\
+		Componente del sistema de ficheros para PlanetLab que funciona dentro
+		del núcleo de Linux.
+		\\
+		Este componente, puede en realidad ser varios, cada uno dando
+		unos servicios concretos (uno para el desplegamiento, uno para
+		monitorización, \ldots).
+
+	\item [\uplfs:] PlanetLab File System (User-mode Side)\\
+		Componente del sistema de ficheros para PlanetLab que funciona en modo
+		usuario.
+		\\
+		Este componente en realidad hace de intermediario entre el
+		propio sistema de ficheros (es decir, el núcleo) y los
+		componentes que permiten realizar las funcionalidades y
+		comunicaciones (en nuestro caso, sería \dpld).
+
+	\item [\dpld:] Deployer Daemon\\
+		Componente encargado de mandar las órdenes de desplegamiento y
+		mantener actualizada la visión que tiene el usuario sobre los
+		slices de desplegamiento.
+
+	\item [\pldb :] PlanetLab Data Base (para obtener inicialmente la lista
+		de nodos de un slice)\\
+		Componente para obtener datos de PlanetLab Central (PLC).
+
+	\item [\umcc :] User-mode Multicast Client\\
+		Componente encargado de las comunicaciones entre un sistema cualquiera
+		y la red multicast.
+
+	\item [\umcr :] User-mode Multicast Router\\
+		Componente encargado de enrutar paquetes multicast.
+
+	\item [\dplc :] Deployer Client\\
+		Componente encargado de desplegar los ficheros en un nodo e informar
+		de los slices que tiene creados.
+
+	\item [\famon:] File Alteration Monitor\\
+		Componente encargado de vigilar qué ficheros cambian en un nodo.
+\end{description}
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=0.5]{arquitectura.eps}
+	\caption{Arquitectura del Sistema}
+	\label{fig:arquitectura}
+\end{figure}
+
+
+
+\section{Lógica del sistema}
+
+\begin{itemize}
+	\item Descubrimiento de slices en PlanetLab \\
+		Al acceder al sistema de ficheros (\kplfs-\uplfs), hay que preguntar a
+		un servicio de PlanetLab si existe o no un slice dado (al hacer un
+		move de un ejectuable a un directorio que es un slice) o cuáles
+		existen (al hacer un ls para ver los slices disponibles).
+
+		Para ello, hace falta encontrar el nodo con el servicio de PlanetLab
+		de BD \textbf{más cercano} (por ahora solo hay uno, y es
+		\textit{PlanetLab Central}) y preguntarle:
+		\begin{itemize}
+			\item si existe un slice concreto
+
+			\item qué slices hay
+		\end{itemize}
+
+	\item Descubrimiento de nodos en PlanetLab \\
+		Como en el caso anterior, nos hace falta preguntar a PlanetLab por los
+		nodos, tanto a nivel general, como por los asociados a un slice.
+
+	\item Descubrimiento del nodo de entrada a la red de distribución
+		multicast.
+\end{itemize}
+
+Con tal de minimizar la latencia y ocupación innecesaria del ancho de banda,
+para todos los anteriores puntos hace falta encontrar el nodo más cercano que
+da un servicio concreto.
+
+Para ello, se podría utilizar un servicio DNS al estilo Akamai, tal como
+utiliza google, o algo como CoDNS \cite{CoDNS}, subproyecto de Codeen
+\cite{Codeen}, que nos dan la IP del nodo más cercano que proporciona un
+servicio conreto.
+
+
+
+\section{Esquema de \plfs (PlanetLab File System)}
+
+%\newpage
+\begin{code}
+	/plfs
+	|-slices
+	| `-<slice>
+	|   |-key
+	|   |-passwd
+	|   |-script
+	|   |-nodes
+	|   | `-<node>
+	|   |   `-unshared
+	|   `-shared
+	`-nodes
+	  `-<node>
+	    `-slices
+	      `-<slice> -> /plfs/slices/<slice>
+\end{code}
+
+\begin{description}
+	\item[\texttt{/plfs/slices/\textless{}slice\textgreater/key}] :\\
+		Éste fichero contiene la clave privada ssh correspondiente al slice.
+
+	\item[\texttt{/plfs/slices/\textless{}slice\textgreater/passwd}] :\\
+		Éste fichero contiene el password asociado a la clave privada del
+		slice.
+
+	\item[\texttt{/plfs/slices/\textless{}slice\textgreater/script}] :\\
+		Éste fichero es un shell script que se ejecutará en cada máquina una
+		vez hecho el desplegamiento.
+		\\
+		El script tiene un sólo parámetro que puede ser:
+
+		% TODO(~): NOTA MENTAL: ¿al terminar la máquina virtual, ya
+		% ejecutará dicho startup->stop?
+		\begin{description}
+			\item [start:] lleva a cabo las operaciones para
+				arrancar el servicio desplegado
+
+			\item [stop:] lleva a cabo las operaciones para parar
+				el servicio
+
+			\item [deploy:] lleva a cabo las operaciones necesarias
+				para preparar el arranque del servicio
+		\end{description}
+
+	\item[\texttt{/plfs/slices/\textless{}slice\textgreater/nodes/\textless{}node\textgreater/unshared}] :\\
+		Éste directorio es propio de cada nodo en el contexto del slice que
+		estamos mirando; puede servir para guardar ficheros de configuración
+		específicos de cada máquina, sin hacer nunca un desplegamiento al
+		grupo entero.
+
+	\item[\texttt{/plfs/slices/\textless{}slice\textgreater/shared}] :\\
+		Éste directorio contiene los ficheros de los que se hace un
+		desplegamiento al grupo entero (slice). La condición que deben
+		cumplir los contenidos de éste directorio, es que sean
+		inmutables de cara a \plfs.
+\end{description}
+
+Tal como está hecho el esquema, permitiría que alguien pusiera un directorio
+de administración en, por ejemplo,
+\texttt{/plfs/slices/\textless{}slice\textgreater/monitor} con estadísticas de
+funcionamiento del slice, u otro
+\texttt{/plfs/nodes/\textless{}node\textgreater/monitor} con estadísticas de
+funcionamiento de un nodo concreto.
+
+
+
+\section{Operaciones de \plfs}
+
+Las posibles operaciones que \plfs permite, y por ende, que \kplfs implemente
+y puede llegar a comunicar a \uplfs, son las propias de un sistema de
+ficheros, es decir (según las operaciones que puede realizar un usuario desde
+la línea de comandos):
+
+\begin{description}
+	\item [\texttt{ls}] :\\
+		Operaciones de consulta de contenido de directorios y/o
+		propiedades.
+
+		\begin{itemize}
+			\item Listado de slices (vía módulo \pldb)
+
+			\item Listado de nodos (vía módulo \pldb)
+
+			\item Listado de ficheros desplegados (\texttt{shared}
+				y \texttt{unshared}).
+		\end{itemize}
+
+	\item [\texttt{mv}] :\\
+		Lo que nosotros implementaremos será un \textit{move} de ficheros
+		(aplicación a desplegar) a un slice (conjunto de nodos, representado
+		por el directorio
+		\texttt{/plfs/slices/\textless{slice\textgreater/shared}}) o nodo
+		concreto (representado por el directorio
+		\texttt{/plfs/slices/\textless{slice\textgreater/nodes/\textless{}node\textgreater/unshared}}).
+		Es decir, \textbf{no} permitiremos operaciones como:
+
+		\begin{itemize}
+			\item mover nodos
+
+			\item mover slices
+
+			\item \ldots
+		\end{itemize}
+
+	\item [\texttt{cp}] :\\
+		Igual que en un \textit{move}, pero copiando los ficheros de orígen.
+
+	\item [\textit{edición}] :\\
+		La edición de un fichero provocará el redespliegue del mismo
+		una vez sea cerrado.
+
+	\item [\textit{lectura}] :\\
+		La lectura de un fichero provocará su importación previa en
+		caso de no estar cacheado.
+
+	\item [\texttt{rename}] :\\
+		Soportado solo para ficheros y directorios que cuelgan de
+		\texttt{shared} o \texttt{unshared}.
+
+	\item [\texttt{rm}] :\\
+		Soportado solo para ficheros y directorios que cuelgan de
+		\texttt{shared} o \texttt{unshared}.
+
+	\item [\texttt{mkdir}] :\\
+		Según en que directorio se haga, las implicaciones son
+		distintas:
+
+		\begin{itemize}
+			\item En \texttt{/plfs/slices}: Crea un slice sin nodos asociados
+
+			\item En \texttt{/plfs/slices/\textless{}slice\textgreater/nodes}:
+				Añade un nodo a un slice
+
+			\item En \texttt{/plfs/nodes}: Añade un nodo al sistema
+				PlanetLab
+
+			\item En los directorios \texttt{shared} y
+				\texttt{unshared} crea ése directorio, según
+				corresponda
+		\end{itemize}
+
+		Los tres primeros puntos, como no entran dentro del
+		desplegamiento de aplicaciones, no han sido pensados en
+		profundidad para llevarlos a cabo.
+
+	\item [\texttt{rmdir}] :\\
+		Igual que en el caso anterior, según en que directorio se haga, las
+		implicaciones son distintas:
+
+		\begin{itemize}
+			\item En \texttt{/plfs/slices}: Elimina un slice de PlanetLab
+
+			\item En \texttt{/plfs/slices/\textless{}slice\textgreater/nodes}:
+				Elimina un nodo de un slice
+
+			\item En \texttt{/plfs/nodes}: Elimina un nodo del sistema
+				PlanetLab
+
+			\item En los directorios \texttt{shared} y
+				\texttt{unshared} elimina el directorio que
+				corresponda.
+		\end{itemize}
+
+		De nuevo, los tres primeros puntos, como no entran dentro del
+		desplegamiento de aplicaciones, no han sido pensados en
+		profundidad para llevarlos a cabo.
+
+	\item [\texttt{touch}] :\\
+		\textbf{NO} soportado.
+
+	\item[\texttt{chown}, \texttt{chmod}] :\\
+		\textbf{NO} soportado.
+
+	\item[\texttt{ln}] :\\
+		\textbf{NO} soportado.
+
+	\item[Otras operaciones] :\\
+		\textbf{NO} soportadas.
+\end{description}
+
+
+
+\section{Lógica de Desplegamiento}
+
+Cada vez que se realiza un move/copy en el sistema de ficheros para el
+desplegamiento, los pasos a seguir son estos:
+
+\textit{Precondición}: El slice destino está ya creado (\texttt{mkdir}).
+
+\begin{enumerate}
+	\item \kplfs $\rightarrow$ \uplfs \\
+		Se informa de los ficheros de aplicación a desplegar i del slice
+		o nodo destino (en el caso de ser un solo nodo el
+		destino, la comunicació se establece directamente
+		desde \uplfs hacia \dplc).
+
+	\item \uplfs $\rightarrow$ \dpld \\
+		\uplfs redirige el mensaje al componente indicado por este (\dpld),
+		puesto que \kplfs puede manejar la vista de diferentes componentes.
+
+	\item \dpld $\rightarrow$ \umcc \\
+		Se comunica el slice destino, se dan los ficheros a desplegar y el
+		shell script con los comandos a ejecutar una vez desplegados.
+
+	\item \umcc $\rightarrow$ red \umcr \\
+		Se inyectan los paquetes a enviar con destino a un grupo en la
+		red \umc.\\
+		En nuestro caso, el grupo destino sería un slice y el
+		desplegamiento se realizará a aquellos nodos donde haya \dplc,
+		de modo que serán siempre conocidos por la red multicast.
+
+	\item intra-red \umcr (red multicast) \\
+		Los nodos de la red \umcr encaminan el conjunto de paquetes
+		hacia el grupo multicast de destino.\\
+		En nuestro caso encaminarán los ficheros, script, etc de
+		la aplicación a desplegar hacia los nodos de \dplc que forman
+		parte del slice destino.
+
+	\item red \umcr $\rightarrow$ \umcc \\
+		Los paquetes llegan finalmente a los nodos que conforman el
+		grupo destino multicast.
+		En nuestro caso, los ficheros, script, etc. llegan finalmente a
+		los nodos destino y son procesados por el módulo \umcc.
+
+	\item \umcc $\rightarrow$ \dplc \\
+		El módulo \umcc hace llegar los paquetes a desplegar al \dplc.
+
+	\item \dplc $\rightarrow$ slice destino (ssh) \\
+		Se despliega la aplicación (se copian los ficheros), y una vez hecho
+		esto, se ejecuta el shell script adjuntado, en caso de estar
+		presente. Para ello, primero ejecuta el \textbf{deploy} y luego
+		el \textbf{start}.
+		En el apartado de sincronización veremos con más detalle las
+		diferentes posibilidades al realizar la ejecución del script
+		(sincronización).
+		%TODO: CITE => cite de que?!
+\end{enumerate}
+
+% TODO: NOTA:
+% En caso de haber un fallo en cualquiera de los dos pasos anteriores,
+% se devuelve un error al dpld origen (a modo de NACK) ??????
+% Si todo es correcto anunciar al dpld??? Escalabilidad? ACK's
+
+
+
+\section{Comunicación Multicast}
+
+Como hemos comentado, el desplegamiento de los ficheros se hace sobre una red
+multicast, por lo que hace falta describir algunas de sus características que
+asumiremos de ahora en adelante para el diseño de los componentes del sistema.
+
+Las operaciones que debe proporcionar esta red multicast son las siguientes:
+
+\begin{description}
+	\item[Join]:\\
+		Inscripción a un grupo multicast.
+
+	\item[Leave]:\\
+		Desuscripción de un grupo multicast.
+\end{description}
+
+En nuestro caso, veremos como \dplc gestiona las inscripciones/desuscripciones
+a los grupos multicast, dichos grupos serán realmente los slice destino a los
+que se quiera realizar el desplegamiento de las aplicaciones. De modo que,
+cuando se quiera hacer dicho desplegamiento, desde \dpld, no será necesario
+consultar previamente a PlanetLab Central (mediante \pldb) sobre la pertinencia
+de los nodos a un grupo. Es decir, el grupo ya está previamente creado.
+
+El modo en que \dplc realiza las operaciones de inscripción/desuscripción y en
+qué momento, lo veremos con más detalle en el capítulo \ref{TODO}.
+%TODO CITE
+
+Para hacer que la red multicast sea fiable nos hemos planteado las siguientes
+posibilidades:
+
+\begin{description}
+	\item[NACK based]:\\
+		Solamente se envían NACKS en caso de fallo en el envío. Es
+		decir, no se realizan ACK's.
+
+	\item[Tree ACK (TRACK)]:\\
+		En este caso, se envían ACK's pero agrupados hacia la raíz del
+		árbol multicast. Es decir, los ACK's de los "hijos" se agrupan
+		en el "padre" para enviar un sólo ACK.
+\end{description}
+
+En nuestro caso, hemos pensado que sería positivo elegir la opción de TRACK,
+puesto que ésta nos permitiría que \dpld realizara los tipos de
+desplegamiento que presentamos en el apartado \ref{sect-deployment}.
+%TODO CITE
+
+
+
+\section{Tipos de Desplegamiento}
+\label{sect-deployment}
+
+Los tipos de desplegamiento que hemos considerado interesantes son los
+siguientes:
+
+\begin{description}
+	\item[Desplegamiento immediato]:\\
+		Una vez desplegados los ficheros, se ejecuta el script de
+		desplegamiento y arranque.
+
+	\item[Desplegamiento sincronizado]:\\
+		Gracias a la implementación TRACK de Multicast, podemos hacer
+		un desplegamiento sincronizado a dos pasos, en primer lugar
+		realizamos el desplegamiento de los ficheros, y una vez recibido
+		el ACK agrupado realizamos una segunda comunicación multicast
+		para ejecutar el script de desplegamiento y arranque.
+
+	\item[Redesplegamiento]:\\
+		Se realiza de la misma manera que un desplegamiento immediato,
+		pero como reacción a una suscripción de un nuevo nodo, o bien
+		al reintento de desplegamiento en un nodo en el que ha fallado
+		un desplegamiento previo (NACK).
+
+		% TODO ESPECIFICAR COMO ELEGIR EL TIPO DE DESPLEGAMIENTO
+
+		% TODO(~) (Apartats3.2, 3.6 i 4.3):
+		%
+		%	Añadir un nodo al slice una vez ya desplegada la
+		%aplicacion
+		%
+		%	Solucio: DPLC d'aquest node, ha de comunicar a DPLD que
+		%	s'hi afegeix al qual se li ha de fer desplegament!! (3.2, 3.6)
+		%		=> PROTOCOL DE WARNINGS AMB AUTENTIFICACIO!!! (4.1)
+		%
+\end{description}
+
+
+% TODO (!!!!!): Cuando se abren las conexiones SSH? timeout?
+%       Cuando se dan las claves y passwd ssh?
+%
+
+
+% TODO(?): 'ls' => renew => cheksums??
+%
+% TODO(~)  'ls' de unshared ??
+% 	=> MIRAR NODO CONCRETO => DPLC TIENE QUE AGREGAR FUNCIONALIDAD 	(3.6)
+%
+% TODO(~)  'ls' de shared ??
+%
+%	Solucio Possible:
+%		1) dpld escull a l'atzar un node del slice a qui preguntar
+%		<shared> (essent aquest no corrupte).			(3.2)
+%		2) si dpld s'assabenta que un node es corrupte, envia l'ordre
+%		de fer stop.
+%			a) si no es sincrhonized, el redesplega amb
+%			deployAppToNode
+%			b) si es synchronized,
+%				- Redesplegar tot per ex. si hi ha un minim de
+%				nodes no corruptes i en funcionament.
+%
+%
+%	=> FAM ha de comunicar a DPLC si hi ha canvis als fitxers
+%		=> FAM ha de saber quins fitxers son shared		(3.7)
+%		=> DPLC ha d'arrancar FAM!!!				(3.6)
+%
+%	A MES SI FAM SAP SI SON SHARED O UNSHARED, permet que DPLC li soliciti
+%	els fitxers de cada tipus segons la peticio que faci DPLD.
+

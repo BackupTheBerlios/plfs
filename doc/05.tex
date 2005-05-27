@@ -1,0 +1,145 @@
+\chapter{Caminos de operación}
+
+\textbf{\textit{En este capítulo comentaremos los diagramas de secuencia que
+seguirían las comunicaciones entre los componentes para tener una idea general
+del sistema de modo visual.}}
+
+
+
+\section{Listado de nodos}
+
+El comando que lanzaría esta operación seria \texttt{ls /plfs/nodes/}, y el
+diagrama de sus operaciones es el que se muestra en la figura
+\ref{fig:act_-_ls_nodes}.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=1.0]{act_-_ls_nodes.eps}
+	\caption{Listado de nodos}
+	\label{fig:act_-_ls_nodes}
+\end{figure}
+
+
+
+\section{Listado de slices}
+
+El comando que lanzaría esta operación seria \texttt{ls /plfs/slices/}, y el
+diagrama de sus operaciones es el que se muestra en la figura
+\ref{fig:act_-_ls_slices}.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=1.0]{act_-_ls_slices.eps}
+	\caption{Listado de slices}
+	\label{fig:act_-_ls_slices}
+\end{figure}
+
+
+
+\section{Listado de ficheros compartidos}
+
+El comando que lanzaría esta operación sería \texttt{ls
+/plfs/slices/\textless{}slice\textgreater/shared/}, y el diagrama de sus
+operaciones es el que se muestra en la figura \ref{fig:act_-_ls_shared}.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=1.0]{act_-_ls_shared.eps}
+	\caption{Listado de ficheros compartidos}
+	\label{fig:act_-_ls_shared}
+\end{figure}
+
+
+
+\section{Listado de nodos de un slice}
+
+El comando que lanzaría esta operación sería \texttt{ls
+/plfs/slices/\textless{}slice\textgreater/nodes/}, y el diagrama de sus
+operaciones es el que se muestra en la figura \ref{fig:act_-_ls_slice_nodes}.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=1.0]{act_-_ls_slice_nodes.eps}
+	\caption{Listado de nodos de un slice}
+	\label{fig:act_-_ls_slice_nodes}
+\end{figure}
+
+
+
+\section{Listado de ficheros no compartidos}
+
+El comando que lanzaría esta operación sería \texttt{ls
+/plfs/slices/\textless{}slice\textgreater/nodes/\textless{}node\textgreater/unshared/},
+y el diagrama de sus operaciones es el que se muestra en la figura
+\ref{fig:act_-_ls_unshared}.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=1.0]{act_-_ls_unshared.eps}
+	\caption{Listado de ficheros no compartidos}
+	\label{fig:act_-_ls_unshared}
+\end{figure}
+
+
+
+\section{Obtención de un fichero}
+
+El comando que lanzaría esta operación sería, por ejemplo, un \texttt{cat} de
+un fichero, ya fuera en \texttt{shared} o \texttt{unshared}, y el diagrama de
+sus operaciones es el que se muestra en la figura \ref{fig:act_-_get}.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=1.0]{act_-_get.eps}
+	\caption{Obtención de un fichero}
+	\label{fig:act_-_get}
+\end{figure}
+
+
+
+\section{Desplegamiento}
+
+% TODO: desplegar el soft de desplegamiento si no esta presente y es un nuevo
+% nodo?
+
+El comando que lanzaría esta operación sería, por ejemplo, un \texttt{cp} de
+un fichero, ya fuera a \texttt{shared} a \texttt{unshared}, y el diagrama de
+sus operaciones es el que se muestra en la figura \ref{fig:act_-_put}.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=1.0]{act_-_put.eps}
+	\caption{Desplegamiento}
+	\label{fig:act_-_put}
+\end{figure}
+
+
+
+\section{Adición de un nodo a un grupo}
+
+Ésta operación se llevaría a cabo al crear una nueva máquina virtual en un
+nodo donde ya este corriendo \dplc, y el diagrama de sus operaciones es el que
+se muestra en la figura \ref{fig:act_-_join}.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=1.0]{act_-_join.eps}
+	\caption{Adición de un nodo a un grupo}
+	\label{fig:act_-_join}
+\end{figure}
+
+
+
+\section{Eliminación de un nodo de un grupo}
+
+Ésta operación se llevaría a cabo al eliminar una máquina virtual de un nodo
+donde ya este corriendo \dplc, y el diagrama de sus operaciones es el que se
+muestra en la figura \ref{fig:act_-_delete}.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=1.0]{act_-_delete.eps}
+	\caption{Eliminación de un nodo de un grupo}
+	\label{fig:act_-_delete}
+\end{figure}
+

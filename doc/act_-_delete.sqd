@@ -1,0 +1,280 @@
+Storage 
+{
+	{ Format 1.33 }
+	{ GeneratedFrom TSQD-version-2.20 }
+	{ WrittenBy xxx }
+	{ WrittenOn "" }
+}
+
+Document 
+{
+	{ Type "Sequence Diagram" }
+	{ Name act_-_delete.sqd }
+	{ Author xxx }
+	{ CreatedOn "" }
+	{ Annotation "" }
+}
+
+Page 
+{
+	{ PageOrientation Portrait }
+	{ PageSize A4 }
+	{ ShowHeaders False }
+	{ ShowFooters False }
+	{ ShowNumbers False }
+}
+
+Scale 
+{
+	{ ScaleValue 1 }
+}
+
+# GRAPH NODES
+
+CBDObjectNode 67
+{
+	{ Name ":dplc" }
+	{ Annotation "" }
+	{ Parent 0 }
+	{ Index "" }
+	{ Stereotype "<< - >>" }
+	{ Properties "{ - }" }
+	{ Anchors 2 }
+	{ Anchor 340 4 }
+	{ Anchor 400 5 }
+}
+
+CBDObjectNode 68
+{
+	{ Name ":umcc" }
+	{ Annotation "" }
+	{ Parent 0 }
+	{ Index "" }
+	{ Stereotype "<< - >>" }
+	{ Properties "{ - }" }
+	{ Anchors 4 }
+	{ Anchor 340 5 }
+	{ Anchor 380 5 }
+	{ Anchor 400 4 }
+	{ Anchor 360 4 }
+}
+
+CBDObjectNode 71
+{
+	{ Name ":umcr" }
+	{ Annotation "" }
+	{ Parent 0 }
+	{ Index "" }
+	{ Stereotype "<< - >>" }
+	{ Properties "{ - }" }
+	{ Anchors 2 }
+	{ Anchor 380 4 }
+	{ Anchor 360 5 }
+}
+
+# GRAPH EDGES
+
+CBDObjectLinkEdge 73
+{
+	{ Name "delete(slice, node)" }
+	{ Annotation "" }
+	{ Parent 0 }
+	{ Subject1 67 }
+	{ Subject2 68 }
+	{ Anchor1 340 4 }
+	{ Anchor2 340 5 }
+}
+
+CBDObjectLinkEdge 74
+{
+	{ Name "delete(group, node)" }
+	{ Annotation "" }
+	{ Parent 0 }
+	{ Subject1 68 }
+	{ Subject2 71 }
+	{ Anchor1 360 4 }
+	{ Anchor2 360 5 }
+}
+
+CBDObjectLinkEdge 75
+{
+	{ Name "" }
+	{ Annotation "" }
+	{ Parent 0 }
+	{ Subject1 71 }
+	{ Subject2 68 }
+	{ Anchor1 380 4 }
+	{ Anchor2 380 5 }
+}
+
+CBDObjectLinkEdge 76
+{
+	{ Name "" }
+	{ Annotation "" }
+	{ Parent 0 }
+	{ Subject1 68 }
+	{ Subject2 67 }
+	{ Anchor1 400 4 }
+	{ Anchor2 400 5 }
+}
+
+# VIEWS AND GRAPHICAL SHAPES
+
+View 1
+{
+	{ Index "0" }
+	{ Parent 0 }
+}
+
+SSDSingleObjectBox 70
+{
+	{ View 1 }
+	{ Subject 67 }
+	{ Position 230 280 }
+	{ Size 80 40 }
+	{ Color "black" }
+	{ LineWidth 1 }
+	{ LineStyle Solid }
+	{ FillStyle Unfilled }
+	{ FillColor "white" }
+	{ FixedName False }
+	{ Font "-*-helvetica-medium-r-normal--10*" }
+	{ TextAlignment Center }
+	{ TextColor "black" }
+	{ NameUnderlined True }
+	{ EndPosition 230 419 }
+	{ Destructive 0 }
+}
+
+SSDSingleObjectBox 69
+{
+	{ View 1 }
+	{ Subject 68 }
+	{ Position 330 280 }
+	{ Size 80 40 }
+	{ Color "black" }
+	{ LineWidth 1 }
+	{ LineStyle Solid }
+	{ FillStyle Unfilled }
+	{ FillColor "white" }
+	{ FixedName False }
+	{ Font "-*-helvetica-medium-r-normal--10*" }
+	{ TextAlignment Center }
+	{ TextColor "black" }
+	{ NameUnderlined True }
+	{ EndPosition 330 411 }
+	{ Destructive 0 }
+}
+
+T4Line 77
+{
+	{ View 1 }
+	{ Subject 73 }
+	{ FromShape 70 }
+	{ ToShape 69 }
+	{ Curved False }
+	{ End1 Empty }
+	{ End2 FilledArrow }
+	{ Points 2 }
+	{ Point 230 340 }
+	{ Point 330 340 }
+	{ NamePosition 280 330 }
+	{ Color "black" }
+	{ LineWidth 1 }
+	{ LineStyle Solid }
+	{ FixedName False }
+	{ Font "-*-helvetica-medium-r-normal--10*" }
+	{ TextAlignment Center }
+	{ TextColor "black" }
+	{ NameUnderlined False }
+}
+
+SSDSingleObjectBox 72
+{
+	{ View 1 }
+	{ Subject 71 }
+	{ Position 440 280 }
+	{ Size 80 40 }
+	{ Color "black" }
+	{ LineWidth 1 }
+	{ LineStyle Solid }
+	{ FillStyle Unfilled }
+	{ FillColor "white" }
+	{ FixedName False }
+	{ Font "-*-helvetica-medium-r-normal--10*" }
+	{ TextAlignment Center }
+	{ TextColor "black" }
+	{ NameUnderlined True }
+	{ EndPosition 440 389 }
+	{ Destructive 0 }
+}
+
+T4Line 78
+{
+	{ View 1 }
+	{ Subject 74 }
+	{ FromShape 69 }
+	{ ToShape 72 }
+	{ Curved False }
+	{ End1 Empty }
+	{ End2 FilledArrow }
+	{ Points 2 }
+	{ Point 330 360 }
+	{ Point 440 360 }
+	{ NamePosition 385 350 }
+	{ Color "black" }
+	{ LineWidth 1 }
+	{ LineStyle Solid }
+	{ FixedName False }
+	{ Font "-*-helvetica-medium-r-normal--10*" }
+	{ TextAlignment Center }
+	{ TextColor "black" }
+	{ NameUnderlined False }
+}
+
+T4Line 79
+{
+	{ View 1 }
+	{ Subject 75 }
+	{ FromShape 72 }
+	{ ToShape 69 }
+	{ Curved False }
+	{ End1 Empty }
+	{ End2 FilledArrow }
+	{ Points 2 }
+	{ Point 440 380 }
+	{ Point 330 380 }
+	{ NamePosition 385 370 }
+	{ Color "black" }
+	{ LineWidth 1 }
+	{ LineStyle Solid }
+	{ FixedName False }
+	{ Font "-*-helvetica-medium-r-normal--10*" }
+	{ TextAlignment Center }
+	{ TextColor "black" }
+	{ NameUnderlined False }
+}
+
+T4Line 80
+{
+	{ View 1 }
+	{ Subject 76 }
+	{ FromShape 69 }
+	{ ToShape 70 }
+	{ Curved False }
+	{ End1 Empty }
+	{ End2 FilledArrow }
+	{ Points 2 }
+	{ Point 330 400 }
+	{ Point 230 400 }
+	{ NamePosition 280 390 }
+	{ Color "black" }
+	{ LineWidth 1 }
+	{ LineStyle Solid }
+	{ FixedName False }
+	{ Font "-*-helvetica-medium-r-normal--10*" }
+	{ TextAlignment Center }
+	{ TextColor "black" }
+	{ NameUnderlined False }
+}
+
