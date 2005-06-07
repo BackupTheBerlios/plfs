@@ -10,8 +10,14 @@ http://www.cse.nd.edu/~striegel/research/stealth/index.html
 DDNS:
 ----
 Esta al TODO de planetlab
+pdns(-backend-geo)
 
 FAM:
 ---
 fam
 gamin
+
+Monitoritzacio:
+--------------
+http://cairo.cs.uiuc.edu/mon/index.html
+http://cairo.cs.uiuc.edu/mon/monclient.html
