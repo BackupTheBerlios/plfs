@@ -70,7 +70,8 @@ aplicaciones, debe poder realizar las siguientes operaciones para poder saber
 como llegar y a dónde puede llegar. Es decir, debe poder conseguir la
 información necesaria sobre los slices disponibles en PlanetLab y sus nodos, y
 por otra parte, debe poder descubrir su punto de entrada a la red multicast
-desde el exterior. \\
+desde el exterior.
+
 De modo que el sistema debe permitir:
 
 \begin{itemize}
@@ -92,7 +93,7 @@ De modo que el sistema debe permitir:
 	\item Descubrimiento de nodos en PlanetLab \\
 		Como en el caso anterior, nos hace falta preguntar a PlanetLab por los
 		nodos, tanto a nivel general, como por los asociados a un slice.
-	
+
 	\item Descubrimiento del nodo de entrada a la red de distribución
 		multicast.
 \end{itemize}
@@ -107,22 +108,23 @@ utiliza google, o algo como CoDNS \cite{CoDNS}, subproyecto de Codeen
 servicio conreto.
 
 
+
 \section{Esquema de \plfs (PlanetLab File System)}
 
 Antes de comentar el esquema del árbol de ficheros y directorios de \plfs, es
 necesario dejar bien claro que hemos diseñado el sistema con la idea de
 permitir una cierta flexibilidad al usuario y que pueda diferenciar entre dos
 tipos de ficheros:
-\begin{description}
 
+\begin{description}
 	\item [Los ficheros que se despliegan como shared]:\\
 		Que todos los nodos del slice destino tendrán por igual, bajo la
 		condición que además deben de ser inmutables (ej: el programa
 		principal de la aplicación).
+
 	\item [Los ficheros que se despliegan como unshared]:\\
 		Que serán propios de cada nodo (ej: cada nodo podría asumir un
 		rol distinto si tuviera ficheros de configuración propios).
-
 \end{description}
 
 Como veremos ahora, y durante todo el documento, esta idea es básica para el
@@ -153,12 +155,11 @@ ficheros como se puede apreciar en la figura:
 A continuación una explicación de los diferentes ficheros y directorios:
 
 \begin{description}
-	
 	\item[\texttt{/plfs/slices/\textless{}slice\textgreater/backup}] :\\
 		Este fichero contiene una URI que indica el repositorio central
 		de backup donde se puedan encontrar los ficheros \texttt{shared}
 		en su versión original (ver el apartado 2.x sobre Redespliegue).
-		
+
 	\item[\texttt{/plfs/slices/\textless{}slice\textgreater/key}] :\\
 		Este fichero contiene la clave privada ssh correspondiente al
 		slice.
@@ -251,7 +252,8 @@ la línea de comandos):
 
 	\item [\textit{edición}] :\\
 		La edición de un fichero provocará el redespliegue del mismo
-		una vez sea cerrado (ver apartado 2.x sobre Redespliegue)
+		una vez sea cerrado.
+		%TODO \cite (ver apartado 2.x sobre Redespliegue)
 
 	\item [\textit{lectura}] :\\
 		La lectura de un fichero provocará su importación previa en
@@ -327,28 +329,26 @@ la línea de comandos):
 \section{Lógica de Desplegamiento}
 
 Después de pensar diferentes posibilidades sobre como el usuario podría llevar
-a cabo realmente el despliegue, mediante el sistema de ficheros, hemos llegado
+a cabo realmente el despliegue mediante el sistema de ficheros, hemos llegado
 a la conclusión de que el usuario deberá realizar los siguientes pasos:
 
-\begin{enumarete}
-	
+\begin{enumerate}
 	\item 
 		El usuario realiza \texttt{mv/cp} de los ficheros que
 		desea desplegar, y estos son transmitidos mediante el proceso de
 		despliegue que a continuación comentamos.
-	
+
 	\item 
 		A continuación el usuario realiza \texttt{mv/cp} del script de
 		arranque de despliegue, que también es desplegado mediante el
 		mismo proceso hacia los nodos destino.
-
-\end{enumarete}
+\end{enumerate}
 
 Además, y como es obvio dada la naturaleza del propio sistema de ficheros, se
 deberá cumplir la siguiente precondición antes de poder realizar el despliegue:
-	\textit{Precondición}: El slice destino está ya creado
-	(ej: \texttt{mkdir}).\\
-	
+
+\textit{Precondición}: El slice destino está ya creado (ej: \texttt{mkdir}).
+
 Una vez aclarado lo anterior, pasamos a describir como se realizaría de forma
 general el despliegue de los ficheros a través de los diferentes componentes
 del sistema:
@@ -407,6 +407,8 @@ del sistema:
 % se devuelve un error al dpld origen (a modo de NACK) ??????
 % Si todo es correcto anunciar al dpld??? Escalabilidad? ACK's
 
+
+
 \section{Comunicación Multicast}
 
 Como hemos comentado, el desplegamiento de los ficheros se hace sobre una red
@@ -438,6 +440,7 @@ Por otra parte el módulo \dpld también deberá suscribirse al grupo multicast
 como oyente, para poder estar atento a los cambios que se produzcan en los
 ficheros \texttt{shared} (en cuyo caso deberá realizar las operaciones que
 veremos en el apartado 2.x de Redespliegue).
+
 En consecuencia, \dpld deberá poder desuscribirse de un grupo, operación que
 realizará o bien cuando se detenga el daemon o transcurrido cierto tiempo de
 \textit{timeout}. %TODO aclarar este timeout.
@@ -458,36 +461,37 @@ posibilidades:
 
 En nuestro caso, hemos pensado que sería positivo elegir la opción de TRACK,
 puesto que ésta nos permitiría que \dpld realizara los tipos de
-desplegamiento que presentamos en el apartado \ref{sect-deployment}.
+desplegamiento que presentamos en el apartado \ref{sect-redeployment}.
 %TODO CITE
 
 
+
 \section{Redespliegue}
+\label{sect-redeployment}
 
 El componente \fam se encarga de la monitorización de los ficheros etiquetados
 como \texttt{shared}. De este modo, cuando se produce una modificación
 incontrolada de estos ficheros, este componente avisa al \dplc para que a su
 vez lo notifique a los nodos \dpld responsables de ese fichero, es decir,
 aquellos que estén suscritos como oyentes de ese grupo multicast, o slice, del
-cual son los responsables de los despliegues que se realicen en él.\\
+cual son los responsables de los despliegues que se realicen en él.
+
 De modo que entenderemos por modificación incontrolada, aquella que no provenga
 de uno de estos nodos responsables.
 
 Cuando los nodos \dpld responsables se percaten del aviso, procederán a
 redesplegar el fichero siguiendo los pasos a continuación:
 
-\begin{enumarate}
-
+\begin{enumerate}
 	\item \dplc realiza un script->stop deteniendo momentáneamente la
 		aplicación en ese nodo corrupto.
-	
+
 	\item se despliegan los ficheros desde un nodo del mismo slice (un nodo
 		hermano hablando desde el punto de vista de árboles de
 		directorios) que no sea corrupto.
-	
+
 	\item \dplc realiza un script->start para reiniciar la aplicación.
-	
-\end{enumarate}
+\end{enumerate}
 
 Obviamente surge un posible problema como consecuencia de este diseño, y es que
 podría suceder que por circunstancias no existiera ningún otro nodo no corrupto
@@ -501,14 +505,6 @@ que hemos presentado en el esquema de \plfs.
 
 Finalmente, si la recuperación mediante este repositorio no pudiera llevarse a
 cabo, se invalidaría el nodo del slice, y quedaría como corrupto.
-
-
-
-
-
-
-
-
 
 
 
