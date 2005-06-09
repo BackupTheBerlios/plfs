@@ -138,6 +138,7 @@ PlanetLab Central \cite{PLC}.
 
 
 \section{\umcc}
+\label{sect:umcc}
 
 Éste es el módulo cliente de la red multicast, básicamente tiene dos
 funciones:
@@ -304,7 +305,10 @@ siguientes:
 \section{\famon}
 
 Éste módulo está situado en las máquinas clientes de la red, y se encarga de
-monitorizar los ficheros que han sido desplegados en un nodo de un slice.
+monitorizar los ficheros que han sido desplegados en un nodo de un slice. De
+modo que cuando detecta una modificación sobre uno de dichos ficheros, \famon
+avisa a \dplc (el cuál se encargará de avisar a los \dpld encargados del slice
+acerca de la invalidación del fichero).
 
 Para ello debe haber una instancia corriendo en cada máquina virtual que
 corresponda a un slice que funciona a traves de \plfs.
@@ -312,4 +316,3 @@ corresponda a un slice que funciona a traves de \plfs.
 % TODO: operaciones de viliar / dejar paths concretos?
 
 % TODO: buscar un buen programa que lo haga => famd?
-

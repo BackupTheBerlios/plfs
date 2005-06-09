@@ -433,17 +433,16 @@ consultar previamente a PlanetLab Central (mediante \pldb) sobre la pertinencia
 de los nodos a un grupo. Es decir, el grupo ya está previamente creado.
 
 El modo en que \dplc realiza las operaciones de inscripción/desuscripción y en
-qué momento, lo veremos con más detalle en el capítulo \ref{TODO}.
-%TODO CITE
+qué momento, lo veremos con más detalle en el apartado \ref{sect:umcc}.
 
 Por otra parte el módulo \dpld también deberá suscribirse al grupo multicast
 como oyente, para poder estar atento a los cambios que se produzcan en los
 ficheros \texttt{shared} (en cuyo caso deberá realizar las operaciones que
-veremos en el apartado 2.x de Redespliegue).
+veremos en el apartado \ref{sect:redeployment}).
 
 En consecuencia, \dpld deberá poder desuscribirse de un grupo, operación que
 realizará o bien cuando se detenga el daemon o transcurrido cierto tiempo de
-\textit{timeout}. %TODO aclarar este timeout.
+\textit{timeout} por inactividad.
 
 Para hacer que la red multicast sea fiable nos hemos planteado las siguientes
 posibilidades:
@@ -453,40 +452,47 @@ posibilidades:
 		Solamente se envían NACKS en caso de fallo en el envío. Es
 		decir, no se realizan ACK's.
 
-	\item[Tree ACK (TRACK)]:\\
-		En este caso, se envían ACK's pero agrupados hacia la raíz del
-		árbol multicast. Es decir, los ACK's de los "hijos" se agrupan
-		en el "padre" para enviar un sólo ACK.
+	\item[Tree ACK (TRACK) \cite{rfc-track}]:\\
+		Los receptores envían periódicamente informes a el nodo padre
+		sobre lo que han recibido y lo que no (paquetes perdidos).\\
+		Cada padre agrega los informes de sus hijos en un TRACK y los
+		pasa a su padre.\\
+		Se repite el proceso hasta el nodo del que proceden los
+		paquetes, el cual puede realizar las operaciones
+		correspondientes según el TRACK total obtenido.
+
 \end{description}
 
-En nuestro caso, hemos pensado que sería positivo elegir la opción de TRACK,
-puesto que ésta nos permitiría que \dpld realizara los tipos de
-desplegamiento que presentamos en el apartado \ref{sect-redeployment}.
-%TODO CITE
+Creemos que TRACK es más completo y nos permitiría realizar más operaciones a
+nivel de despliegue. Por ejemplo, en caso de recibir un TRACK donde se informa
+de que han fallado algunos paquetes, el cliente de multicast \umcc informaría a
+\dpld el cual se encargaría de reenviar los datos.
 
 
 
 \section{Redespliegue}
-\label{sect-redeployment}
+\label{sect:redeployment}
 
-El componente \fam se encarga de la monitorización de los ficheros etiquetados
+El componente \famon se encarga de la monitorización de los ficheros etiquetados
 como \texttt{shared}. De este modo, cuando se produce una modificación
 incontrolada de estos ficheros, este componente avisa al \dplc para que a su
 vez lo notifique a los nodos \dpld responsables de ese fichero, es decir,
 aquellos que estén suscritos como oyentes de ese grupo multicast, o slice, del
-cual son los responsables de los despliegues que se realicen en él.
+cual son los responsables de los despliegues que se realicen en él, y por
+lo tanto deben encargarse de invalidar los ficheros afectados del sistema de
+ficheros \plfs.
 
-De modo que entenderemos por modificación incontrolada, aquella que no provenga
-de uno de estos nodos responsables.
+Entenderemos por modificación incontrolada, aquella que no provenga de uno de
+estos nodos responsables (nodos con \dpld).
 
-Cuando los nodos \dpld responsables se percaten del aviso, procederán a
-redesplegar el fichero siguiendo los pasos a continuación:
+Cuando \famon avisa al \dplc de ese nodo, éste procederá a redesplegar el
+fichero siguiendo los pasos a continuación:
 
 \begin{enumerate}
 	\item \dplc realiza un script->stop deteniendo momentáneamente la
 		aplicación en ese nodo corrupto.
 
-	\item se despliegan los ficheros desde un nodo del mismo slice (un nodo
+	\item se despliega el fichero desde un nodo del mismo slice (un nodo
 		hermano hablando desde el punto de vista de árboles de
 		directorios) que no sea corrupto.
 
