@@ -32,19 +32,32 @@ utilizaremos un \textbf{dispositivo} para comunicar ambos componentes.
 
 \subsection{Tipos de mensajes}
 
-% TODO: formato de los mensajes
-% antes: ``Eventos kplfs -> uplfs''
 
+\section{\kplfs $\rightarrow$ \uplfs}
+Cuando se realice una operación ("ls","mv", etc) en el sistema de ficheros
+\plfs, el módulo de kernel \kplfs que implementa estas operaciones, deberá
+informar dichos eventos al módulo a nivel usuario \uplfs (el cual deberá
+realizar las operaciones pertinentes).
+Para ello, hemos pensado que el módulo \kplfs realizaría la comunicación de
+estos eventos a \uplfs mediante paso de mensajes, que deberán tener el
+siguiente formato:
 
+	Campo1: Operacion ("ls", "mv", ...)
+	Campo2: Parametros (fichero, directorio...)
+	
 
 \section{\uplfs $\rightarrow$ \pldb}
+%TODO: REVISAR :PPPP
+Cuando el usuario quierer mirar el contenido del directorio de slices o de
+nodos de un slice, y \kplfs remite dicha operación a \uplfs, este realiza la
+consulta de dicha información llamando a las operaciones que ofrece \pldb, por
+ejemplo mediante llamadas a procedimiento remoto (como podría ser Java RMI).
 
-%TODO
-
+Una vez obtenida la información, \uplfs procedería a pasársela a \kplfs el cual
+actualizaría los inodos de \plfs y mostraría el resultado al usuario.
 
 
 \section{\uplfs $\rightarrow$ \dpld}
-
 % TODO: forma de comunicacion
 % TODO: formato de los mensajes
 
@@ -52,7 +65,7 @@ utilizaremos un \textbf{dispositivo} para comunicar ambos componentes.
 
 \section{\dpld $\rightarrow$ \pldb}
 
-%TODO
+%TODO(~) Analogamente a \uplfs -> \pldb
 
 
 

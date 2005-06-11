@@ -174,8 +174,6 @@ A continuación una explicación de los diferentes ficheros y directorios:
 		\\
 		El script tiene un sólo parámetro que puede ser:
 
-		% TODO(~): NOTA MENTAL: ¿al terminar la máquina virtual, ya
-		% ejecutará dicho startup->stop?
 		\begin{description}
 			\item [start:] lleva a cabo las operaciones para
 				arrancar el servicio desplegado
@@ -396,10 +394,6 @@ del sistema:
 		esto, se ejecuta el shell script adjuntado, en caso de estar
 		presente. Para ello, primero ejecuta el \textbf{deploy} y luego
 		el \textbf{start}.
-		%En el apartado de sincronización veremos con más detalle las
-		%diferentes posibilidades al realizar la ejecución del script
-		%(sincronización).  <<-------- JA NO TE SENTIT
-		%TODO: CITE => cite de que?!
 \end{enumerate}
 
 % TODO: NOTA:
@@ -514,45 +508,11 @@ cabo, se invalidaría el nodo del slice, y quedaría como corrupto.
 
 
 
-% TODO(~) (Apartats3.2, 3.6 i 4.3):
-%
-%	Añadir un nodo al slice una vez ya desplegada la
-%aplicacion
-%
-%	Solucio: DPLC d'aquest node, ha de comunicar a DPLD que
-%	s'hi afegeix al qual se li ha de fer desplegament!! (3.2, 3.6)
-%		=> PROTOCOL DE WARNINGS AMB AUTENTIFICACIO!!! (4.1)
-%
-
-
 % TODO (!!!!!): Cuando se abren las conexiones SSH? timeout?
 %       Cuando se dan las claves y passwd ssh?
 %
 
 
 % TODO(?): 'ls' => renew => cheksums??
-%
-% TODO(~)  'ls' de unshared ??
-% 	=> MIRAR NODO CONCRETO => DPLC TIENE QUE AGREGAR FUNCIONALIDAD 	(3.6)
-%
-% TODO(~)  'ls' de shared ??
-%
-%	Solucio Possible:
-%		1) dpld escull a l'atzar un node del slice a qui preguntar
-%		<shared> (essent aquest no corrupte).			(3.2)
-%		2) si dpld s'assabenta que un node es corrupte, envia l'ordre
-%		de fer stop.
-%			a) si no es sincrhonized, el redesplega amb
-%			deployAppToNode
-%			b) si es synchronized,
-%				- Redesplegar tot per ex. si hi ha un minim de
-%				nodes no corruptes i en funcionament.
-%
-%
-%	=> FAM ha de comunicar a DPLC si hi ha canvis als fitxers
-%		=> FAM ha de saber quins fitxers son shared		(3.7)
-%		=> DPLC ha d'arrancar FAM!!!				(3.6)
-%
-%	A MES SI FAM SAP SI SON SHARED O UNSHARED, permet que DPLC li soliciti
-%	els fitxers de cada tipus segons la peticio que faci DPLD.
+s%
 
