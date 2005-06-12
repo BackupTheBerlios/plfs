@@ -33,7 +33,7 @@ Las operaciones que \uplfs ofrece, además de las especificadas en el módulo
 
 Las operaciones que \dpld ofrece son las siguientes:
 
-% TODO: faltan las credenciales de autentificacion, o mejor un paso previo de
+% TODO: faltan las credenciales de autentificación, o mejor un paso previo de
 % autentificación?!?!?!?!
 % TODO(~): faltan los parametros de que desplegar, etc
 % TODO(~): explicar fichero de comandos etc otra vez? 		NOO!!
@@ -69,7 +69,7 @@ Las operaciones que \dpld ofrece son las siguientes:
 		Se registra el nodo de \dpld como oyente de los cambios que se
 		producen en un slice de un nodo concreto.
 		% TODO(?): se puede utilizar un grupo de oyentes a cambios en
-		% grupos de dplc, asi no hace falta el registro...
+		% grupos de dplc, así no hace falta el registro...
 
 	\item[\texttt{invalidateObj (slice\_name, name)}] :\\
 		% TODO(?): utilizar identificador de obj diferente del path?
@@ -78,7 +78,7 @@ Las operaciones que \dpld ofrece son las siguientes:
 		directorio).
 		%NOTA: de que puede servir invalidar un objeto del FS?
 
-	% TODO(?): validaciones? temporalidad?     ES UTIL PLANTEARSELO?
+	% TODO(?): validaciones? temporalidad?     ES ÚTIL PLANTEÁRSELO?
 	
 	% TODO: quien lo utiliza?
 	\item[\texttt{getInfoFilesShared (slice\_name)}] :\\
@@ -173,7 +173,7 @@ comunicare con el módulo \dplc para hacerle llegar los datos de desplegamiento.
 De modo que las operaciones que ofrece, son:
 
 % TODO(~): seguridad a la hora de hacer cambios? umcc va en la máquina de
-% administracion (se puede modificar lo que se quiera)      .... I????
+% administración (se puede modificar lo que se quiera)      .... I????
 %TODO(?): ``dns''?  ------- PQ EL GRUPID NO POT SER SLICE_NAME?
 %			    TB SERVIRIA SI VOLEM ENVIAR A SLICE
 %			    DPLD WARNINGS
@@ -211,22 +211,22 @@ permite que se puedan utilizar otros proyectos ya realizados.
 
 % TODO(~): estudiarlo!!!
 % El punto que aún no hemos aclarado es si el propio identificador de grupo
-% multicast será el identificador de slice (VOTO POR ELLO!!!!!!!!!!!) o algun
+% multicast será el identificador de slice (VOTO POR ELLO!!!!!!!!!!!) o algún
 % otro de más genérico (que requeriría una nueva capa de administración de
 % grupos multicast).
 %
-% Depende del software de multicast que se utilize! (araneola)
+% Depende del software de multicast que se utilice! (araneola)
 
 
 
 \section{\umcr}
 
-Estos nodos se encargan de hacer la transimisión multicast, con tal de hacer
+Estos nodos se encargan de hacer la transmisión multicast, con tal de hacer
 llegar los datos a los \umcc del grupo de destino.
-Asumiremos que estos nodos pertencen a un slice administrativo en el cual no se
+Asumiremos que estos nodos pertenecen a un slice administrativo en el cual no se
 realizan modificaciones o configuraciones maliciosas.
 
-Cómo todos los accesos a la red multicast se hacen a traves de \umcc, se puede
+Cómo todos los accesos a la red multicast se hacen a través de \umcc, se puede
 fácilmente utilizar una implementación ya existente de una red overlay
 multicast en modo usuario, como es Araneola \cite{Araneola}.
 
@@ -237,7 +237,7 @@ multicast en modo usuario, como es Araneola \cite{Araneola}.
 
 \section{\dplc}
 
-% TODO: pertenece a un slice administrado correctamente (no habra
+% TODO: pertenece a un slice administrado correctamente (no habrá
 % modificaciones ni configuraciones maliciosas)
 
 Éste módulo, situado en cada una de las máquinas clientes (o receptoras de las
@@ -254,7 +254,8 @@ máquina y acceder a la máquina virtual asociada al slice de destino.
 Para ello, se podría pensar en varias soluciones, como son:
 
 \begin{description}
-	\item Realizar una preautentificación, en la que dplc se autentifica con los
+	\item Realizar una pre-autentificación, en la que dplc se autentifica
+con los
 		slices a los que se llevará acabo el deployment de aplicaciones, de modo que en
 		las comunicaciones no haga falta realizar el envío de clave y password y tampoco
 		tener que preocuparse de como hacerlo de forma segura.
@@ -270,17 +271,17 @@ siguientes:
 
 % TODO(?): seguridad?
 \begin{description}
-	% TODO: que es _la informacion_?
+	% TODO: que es _la información_?
 	\item[\texttt{getInfoNodeSlice(slice\_name)}] :\\
 		Obtiene la información de los ficheros tipo \textit{unshared}
 		de la aplicación desplegada en el slice \textit{slice\_name} en
 		el mismo nodo que el propio \dplc.
 
-	% TODO: ELIMINAR: llama a la operacion, no la ofrece
+	% TODO: ELIMINAR: llama a la operación, no la ofrece
 	\item[\texttt{warnDpldNewNodeInSlice (slice\_name, node\_name)}] :\\
 		Avisa a los \dpld encargados del slice \textit{slice\_name} de
 		que se ha agregado un nuevo nodo \textit{node\_name} a dicho a
-		slice y que por lo tanto se le debería realziar el despliegue de
+		slice y que por lo tanto se le debería realizar el despliegue de
 		la aplicación.
 
 	\item[\texttt{deployAppToSlice (slice\_name, ...)}] :\\
@@ -292,7 +293,8 @@ siguientes:
 		slice\_name al que se va realizar desplegamiento de
 		aplicaciones.
 
-	% TODO: para que? se para sola... hace falta ofrecer la opcion de pararla?
+	% TODO: para que? se para sola... hace falta ofrecer la opción de
+	% pararla?
 	\item[\texttt{stopAppInSlice (slice\_name)}] :
 		El \dplc del nodo ejecutará script->stop en el slice
 		\textit{slice\_name} de dicho nodo. Es decir, detendrá la
@@ -325,7 +327,8 @@ siguientes:
 %
 % Como diferenciar al entrar un nodo en un grupo de si ya esta al dia o no?
 % - no se hace nada (solo hay cambios si esta presente en un deploy expreso)
-% - tiene la ultima version de los ficheros (numeracion + indicador de ultima version (*))
+% - tiene la ultima version de los ficheros (numeración + indicador de ultima
+%   version (*))
 % - los tiene igual que la mayoria (checksums + problema bizantino)
 % - los tiene igual que un repositorio (checksums + repositorio - bamboo? -)
 %

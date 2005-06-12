@@ -34,24 +34,24 @@ utilizaremos un \textbf{dispositivo} para comunicar ambos componentes.
 
 \subsection{Tipos de mensajes}
 
-% TODO: hace falta esta explicacion? ya esta hecha antes...
-Cuando se realice una operación ("ls","mv", etc) en el sistema de ficheros
-\plfs, el módulo de kernel \kplfs que implementa estas operaciones, deberá
-informar dichos eventos al módulo a nivel usuario \uplfs (el cual deberá
+% TODO: hace falta esta explicación? ya esta hecha antes...
+Cuando se realice una operación (\textt{ls},\texttt{mv}, etc) en el sistema de
+ficheros \plfs, el módulo de kernel \kplfs que implementa estas operaciones,
+deberá informar dichos eventos al módulo a nivel usuario \uplfs (el cual deberá
 realizar las operaciones pertinentes).
 Para ello, hemos pensado que el módulo \kplfs realizaría la comunicación de
 estos eventos a \uplfs mediante paso de mensajes, que deberán tener el
 siguiente formato:
 
 % TODO: aclararlo con las operaciones de 02.tex/03.tex
-	Campo1: Operacion ("ls", "mv", ...)
+	Campo1: Operación ("ls", "mv", ...)
 	Campo2: Parametros (fichero, directorio...)
 
 
 
 \section{\uplfs $\rightarrow$ \pldb}
 %TODO: REVISAR :PPPP
-Cuando el usuario quierer mirar el contenido del directorio de slices o de
+Cuando el usuario quiere mirar el contenido del directorio de slices o de
 nodos de un slice, y \kplfs remite dicha operación a \uplfs, este realiza la
 consulta de dicha información llamando a las operaciones que ofrece \pldb, por
 ejemplo mediante llamadas a procedimiento remoto (como podría ser Java RMI).
@@ -63,14 +63,14 @@ actualizaría los inodos de \plfs y mostraría el resultado al usuario.
 
 \section{\uplfs $\rightarrow$ \dpld}
 
-% TODO: forma de comunicacion
+% TODO: forma de comunicación
 % TODO: formato de los mensajes
 
 
 
 \section{\dpld $\rightarrow$ \pldb}
 
-%TODO(~) Analogamente a \uplfs -> \pldb
+%TODO(~) Análogamente a \uplfs -> \pldb
 
 
 
@@ -136,7 +136,7 @@ que no se está registrado, se procede a realizar un registro unicast nuevo.
 \begin{figure}[h]
 	\centering
 	\includegraphics[scale=0.5]{paq_-_uplfs-pldb.eps}
-	\caption{Paquete generico \uplfs $\rightarrow$ \dplc}
+	\caption{Paquete genérico \uplfs $\rightarrow$ \dplc}
 	\label{fig:paq_-_uplfs-pldb}
 \end{figure}
 
@@ -160,7 +160,8 @@ que no se está registrado, se procede a realizar un registro unicast nuevo.
 	\item[Slice destino:] nombre del slice destino al que va destinado el
 		paquete
 
-	\item[Clave/Passwordd privados ssh:] clave y password privados de ssh para
+	\item[Clave/Password privados ssh:] clave y password privados de ssh
+para
 		que	\dplc se comunique con el slice destino
 
 	\item[Datos:] datos a desplegar en el slice destino
