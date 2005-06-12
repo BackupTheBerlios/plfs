@@ -174,6 +174,9 @@ A continuación una explicación de los diferentes ficheros y directorios:
 		\\
 		El script tiene un sólo parámetro que puede ser:
 
+		% TODO(~): NOTA MENTAL: ¿al terminar la máquina virtual, ya
+		% ejecutará dicho startup->stop?
+		% => potser caldria comentar-ho a la documentaco (com a que ho donem per fet)
 		\begin{description}
 			\item [start:] lleva a cabo las operaciones para
 				arrancar el servicio desplegado
@@ -326,6 +329,14 @@ la línea de comandos):
 
 \section{Lógica de Desplegamiento}
 
+% TODO: HAY QUE AVISAR DE CUALES SE HA PODIDO DESPLEGAR Y CUALES NO
+% que hacer con los que se han quedado a medias/han fallado?
+% estaria bien un fichero de estado? Lista de nodos registrados en PLC en el slice, con:
+% - ultima operacion realizada
+% - ultima operacion fallida
+% - ultima operacion en proceso
+% - nodo no accesible (no responde)
+
 Después de pensar diferentes posibilidades sobre como el usuario podría llevar
 a cabo realmente el despliegue mediante el sistema de ficheros, hemos llegado
 a la conclusión de que el usuario deberá realizar los siguientes pasos:
@@ -394,6 +405,8 @@ del sistema:
 		esto, se ejecuta el shell script adjuntado, en caso de estar
 		presente. Para ello, primero ejecuta el \textbf{deploy} y luego
 		el \textbf{start}.
+		% TODO: diferenciar primeros de ultimo fichero
+		% ahora el ultimo debe ser el script y se hara el deploy+start
 \end{enumerate}
 
 % TODO: NOTA:
@@ -454,7 +467,6 @@ posibilidades:
 		Se repite el proceso hasta el nodo del que proceden los
 		paquetes, el cual puede realizar las operaciones
 		correspondientes según el TRACK total obtenido.
-
 \end{description}
 
 Creemos que TRACK es más completo y nos permitiría realizar más operaciones a
@@ -510,9 +522,5 @@ cabo, se invalidaría el nodo del slice, y quedaría como corrupto.
 
 % TODO (!!!!!): Cuando se abren las conexiones SSH? timeout?
 %       Cuando se dan las claves y passwd ssh?
-%
-
 
 % TODO(?): 'ls' => renew => cheksums??
-s%
-

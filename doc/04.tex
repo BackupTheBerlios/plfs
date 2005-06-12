@@ -6,6 +6,7 @@ los tipos de mensajes en cada tipo de comunicación y la seguridad que debemos
 implementar en cada una, para asegurar autenticidad y confidencialidad.}}
 
 
+
 \section{\kplfs $\rightarrow$ \uplfs}
 
 Para que la aplicación en modo usuario pueda enterarse de las operaciones
@@ -30,10 +31,10 @@ Para realizar esta comunicación de eventos, hay varias posibilidades:
 Así pues, por las ventajas de operaciones no bloqueantes que ofrece,
 utilizaremos un \textbf{dispositivo} para comunicar ambos componentes.
 
+
 \subsection{Tipos de mensajes}
 
-
-\section{\kplfs $\rightarrow$ \uplfs}
+% TODO: hace falta esta explicacion? ya esta hecha antes...
 Cuando se realice una operación ("ls","mv", etc) en el sistema de ficheros
 \plfs, el módulo de kernel \kplfs que implementa estas operaciones, deberá
 informar dichos eventos al módulo a nivel usuario \uplfs (el cual deberá
@@ -42,9 +43,11 @@ Para ello, hemos pensado que el módulo \kplfs realizaría la comunicación de
 estos eventos a \uplfs mediante paso de mensajes, que deberán tener el
 siguiente formato:
 
+% TODO: aclararlo con las operaciones de 02.tex/03.tex
 	Campo1: Operacion ("ls", "mv", ...)
 	Campo2: Parametros (fichero, directorio...)
-	
+
+
 
 \section{\uplfs $\rightarrow$ \pldb}
 %TODO: REVISAR :PPPP
@@ -57,7 +60,9 @@ Una vez obtenida la información, \uplfs procedería a pasársela a \kplfs el cual
 actualizaría los inodos de \plfs y mostraría el resultado al usuario.
 
 
+
 \section{\uplfs $\rightarrow$ \dpld}
+
 % TODO: forma de comunicacion
 % TODO: formato de los mensajes
 
