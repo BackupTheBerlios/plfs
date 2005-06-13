@@ -1,5 +1,7 @@
 \chapter{Comunicación entre los componentes}
 
+%TODO: señalar qué comunicaciones van encriptadas/desencriptadas
+
 \textbf{\textit{En este capítulo comentamos diferentes implementaciones de la
 comunicación entre componentes del sistema. Como veremos, nos centraremos en
 los tipos de mensajes en cada tipo de comunicación y la seguridad que debemos
@@ -35,8 +37,8 @@ utilizaremos un \textbf{dispositivo} para comunicar ambos componentes.
 \subsection{Tipos de mensajes}
 
 % TODO: hace falta esta explicación? ya esta hecha antes...
-Cuando se realice una operación (\textt{ls},\texttt{mv}, etc) en el sistema de
-ficheros \plfs, el módulo de kernel \kplfs que implementa estas operaciones,
+Cuando se realice una operación (\texttt{ls},\texttt{mv}, etc) en el sistema
+de ficheros \plfs, el módulo de kernel \kplfs que implementa estas operaciones,
 deberá informar dichos eventos al módulo a nivel usuario \uplfs (el cual deberá
 realizar las operaciones pertinentes).
 Para ello, hemos pensado que el módulo \kplfs realizaría la comunicación de

@@ -6,6 +6,32 @@ del sistema de modo visual.}}
 
 
 
+\section{Autentificación}
+
+Para la autentificación con \dplc y verificación de los datos firmados de éste,
+hace falta previamente conocer su clave pública.
+%TODO: que pasa al recibir datos firmados/encriptados con una clave que no
+%conocemos?
+
+Con tal de acceder un cliente (\dpld) a un nodo (\dplc), éste debe primero
+registrarse enviándole la clave y password de SSH \textbf{encriptados} con la
+clave pública de \dplc (para evitar que información sensible sea capturada).
+
+Para ello, hay dos primitivas de autentificación, una que hace una
+autentificación con respuesta (destinada a un solo nodo), y otra que hace la
+autentificación con todo el grupo multicast, pero que no da ningún resultado.
+
+El proceso completo es el que se muestra en la figura \ref{fig:act_-_auth}.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=1.0]{act_-_auth.eps}
+	\caption{Proceso de autentificación}
+	\label{fig:act_-_auth}
+\end{figure}
+
+
+
 \section{Listado de nodos}
 
 El comando que lanzaría esta operación seria \texttt{ls /plfs/nodes/}, y el

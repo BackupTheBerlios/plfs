@@ -30,6 +30,7 @@ componentes que necesitaría el sistema presentado (figura
 		componentes que permiten realizar las funcionalidades y
 		comunicaciones (en nuestro caso, sería \dpld).
 
+	% TODO: intercambiar dpld <--> dplc ?!?! tendria mas sentido?
 	\item [\dpld:] Deployer Daemon\\
 		Componente encargado de mandar las órdenes de desplegamiento y
 		mantener actualizada la visión que tiene el usuario sobre los
@@ -102,10 +103,67 @@ Con tal de minimizar la latencia y ocupación innecesaria del ancho de banda,
 para todos los anteriores puntos hace falta encontrar el nodo \textbf{más
 cercano} que da un servicio concreto.
 
+% + TODO: consensuar
 Para ello, se podría utilizar un servicio DNS al estilo Akamai, tal como
 utiliza google, o algo como CoDNS \cite{CoDNS}, subproyecto de Codeen
 \cite{Codeen}, que nos dan la IP del nodo más cercano que proporciona un
-servicio conreto.
+servicio conreto. Cabe notar, además, que éste es un servicio que PlanetLab
+planea dar a todos sus nodos y que tiene como tarea pendiente implementar.
+
+Como el servicio de DNS se utiliza siempre de forma transparente, aunque dé un
+servicio no habitual de localidad, no lo pondremos en el esquema de nuestros
+componentes para mejorar su claridad.
+
+
+
+\section{Seguridad}
+
+% TODO: seguramente deberá moverse de sitio
+Puesto que la autentificación de todos los clientes es obligatoria en
+PlanetLab, cada vez que un cliente (\dpld en uestro caso) intente una operación
+con un cliente (\dplc) con el que no está autentificado, deberá primero relizar
+el proceso de autentificación.
+
+Dicho proceso va dirigido a proporcionar la clave y password SSH a los \dplc y
+verificar que pueden realizar la conexión (que no cerrarán hasta
+pasado un cierto tiempo de inactividad, para evitar la costosa operación de
+realizar la conexión SSH), verificando así la autenticidad del acceso del
+cliente a un slice concreto.
+
+Para ello, cada \dpld tiene su par de llaves, que llamaremos $K_{pub_{d}}$ y
+$K_{priv_{d}}$ para las claves pública y privada, respectivamente, y los \dplc,
+que son administrados por una única identidad de confianza, tienen todos un
+mismo par de llaves, que llamaremos $K_{pub_{c}}$ y $K_{priv_{c}}$.
+
+%TODO: como controlar que los datos vienen de alguien ya autentificado?
+
+%TODO: como avisa un nodo a un cliente que este no esta autentificado?
+
+Los pasos a seguir son:
+
+\begin{enumerate}
+	\item Se consulta con PlanetLab Central y se escoge un nodo cualquiera
+		del slice con el que nos queremos comunicar.
+		\label{step:auth_get_node}
+
+	\item Se pide la clave pública del nodo seleccionado, $K_{pub_{c}}$, y
+		se le da la pública del cliente, $K_{pub_{d}}$.\\
+		Si el nodo no responde, se vuleve al paso
+		\ref{step:auth_get_node}).
+
+	\item Se hace una petición de registro unicast al nodo, con la clave y
+		password SSH encriptados con $K_{pub_{c}}$, juntamente con
+		$K_{pub_{d}}$ para el envío encriptado de datos sensibles
+		(listado de ficheros, etc.).\\
+		Si la operación falla, se aborta el proceso de registro.
+		Si el nodo no responde, se vuleve al paso
+		\ref{step:auth_get_node}).
+
+	\item Se hace una petición de registro multicast al grupo, con la clave
+		y password SSH encriptados con $K_{pub_{c}}$, juntamente con
+		$K_{pub_{d}}$.
+\end{enumerate}
+% - TODO: consensuar
 
 
 
