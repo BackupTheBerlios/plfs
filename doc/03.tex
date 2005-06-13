@@ -10,7 +10,7 @@ deben implementar cada uno de los componentes.}}
 \section{\kplfs}
 Este módulo implementa la interfaz del VFS, y las operaciones que permite las
 hemos descrito en el capítulo anterior en el apartado de Lógica de
-Desplegamiento 2.5.
+Despliegue 2.5.
 
 % TODO(?): invalidate
 
@@ -61,7 +61,7 @@ Las operaciones que \dpld ofrece son las siguientes:
 		node\_name,files,script, key, passwd) }] : \\
 		Lo mismo que deployAppToSlice pero hacia un nodo concreto.
 		Útil, si se añade un nodo a un slice al que se ha realizado ya
-		el desplegamiento.
+		el despliegue.
 
 	\item[\texttt{void addNodeToSlice (slice\_name, node\_name)}] :\\
 		Crea el directorio que representa al nodo en el sistema de
@@ -106,10 +106,12 @@ En concreto, las operaciones que ofrece (API), son:
 
 \begin{description}
 	\item[\texttt{getSlices}] :\\
-		Permite obtener la lista de slices que se han dado de alta en PlanetLab
+		Permite obtener la lista de slices que se han dado de alta en
+PlanetLab
 
 	\item[\texttt{getNodes}] :\\
-		Permite obtener la lista de nodos que se han dado de alta en PlanetLab
+		Permite obtener la lista de nodos que se han dado de alta en
+PlanetLab
 
 	\item[\texttt{getSlice (slice\_name)}] :\\
 		Permite obtener información de un slice
@@ -165,12 +167,12 @@ funciones:
 	\item Recibir los datos a desplegar y hacerlos llegar al módulo dplc.
 \end{description}
 
-El primer caso, se da cuando \dpld ordena el desplegamiento de una
+El primer caso, se da cuando \dpld ordena el despliegue de una
 aplicación/servicio hacia un slice destino. En este caso deberá comunicarse
 con el módulo umcr más cercano para comunicarle los datos necesarios.
 El segundo caso, se da cuando un nodo \umcr le comunica que se debe desplegar
 una aplicación/servicio en el nodo dónde \umcc reside, en este caso deberá
-comunicare con el módulo \dplc para hacerle llegar los datos de desplegamiento.
+comunicare con el módulo \dplc para hacerle llegar los datos de despliegue.
 
 De modo que las operaciones que ofrece, son:
 
@@ -181,7 +183,8 @@ De modo que las operaciones que ofrece, son:
 %			    DPLD WARNINGS
 \begin{description}
 	\item[\texttt{group\_id getGroup (group\_name)}] :\\
-		Permite obtener el identificador, dentro de la red \umc, de un grupo.
+		Permite obtener el identificador, dentro de la red \umc, de un
+grupo.
 
 	\item[\texttt{setOptions (group\_id, options[])}] :\\
 		%TODO(?): QUE FA AIXO??
@@ -243,7 +246,7 @@ multicast en modo usuario, como es Araneola \cite{Araneola}.
 % modificaciones ni configuraciones maliciosas)
 
 Éste módulo, situado en cada una de las máquinas clientes (o receptoras de las
-aplicaciones de las que queremos hacer el desplegamiento), se sitúa en un
+aplicaciones de las que queremos hacer el despliegue), se sitúa en un
 slice propio (donde estarán todos los nodos con éste módulo), y al recibir los
 datos de \umcc accederá a sí mismo por ssh con tal de poner los ficheros al
 slice destino y seguidamente ejecutar el shell script asociado, en caso de
@@ -253,20 +256,8 @@ Para realizar esta conexión por ssh, el nodo del slice dplc necesita los datos
 de clave y password ssh para que \dplc pueda hacer una conexión a la propia
 máquina y acceder a la máquina virtual asociada al slice de destino.
 
-Para ello, se podría pensar en varias soluciones, como son:
-
-\begin{description}
-	\item Realizar una pre-autentificación, en la que dplc se autentifica
-con los
-		slices a los que se llevará acabo el deployment de aplicaciones, de modo que en
-		las comunicaciones no haga falta realizar el envío de clave y password y tampoco
-		tener que preocuparse de como hacerlo de forma segura.
-
-	\item Que en cada comunicación se envíen, además de los ficheros, los datos de
-		autentificación (clave ssh y password).
-
-		% TODO(~): pre-autentificacion? JUSTIFICAR PERQUE HEM FET LA SEGONA :-S
-\end{description}
+Para ello, se utiliza el proceso de autentificación descrito en el apartado
+\ref{sect:security}.
 
 De modo que las operaciones que debe implementar este módulo son las
 siguientes:
@@ -292,7 +283,7 @@ siguientes:
 
 	\item[\texttt{registerToDplc (node\_name, slice\_name)}] :\\
 		Un nodo se registra en \dplc como integrante del slice
-		slice\_name al que se va realizar desplegamiento de
+		slice\_name al que se va realizar despliegue de
 		aplicaciones.
 
 	% TODO: para que? se para sola... hace falta ofrecer la opción de
@@ -314,7 +305,7 @@ siguientes:
 % TODO(~): señalar los triggers de join / delete de los grupos
 
 % TODO:
-%Cuando se añade un nodo a un slice en el que se realiza desplegamiento, se
+%Cuando se añade un nodo a un slice en el que se realiza despliegue, se
 %tiene que informar al módulo \dpld, puesto que es posible que ya se hubiera
 %realizado un desplagamiento previo a dicho slice y \dpld tenga que realizar un
 %deployment al nodo en concreto.

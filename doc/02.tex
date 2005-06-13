@@ -18,12 +18,12 @@ componentes que necesitaría el sistema presentado (figura
 		del núcleo de Linux.
 		\\
 		Este componente, puede en realidad ser varios, cada uno dando
-		unos servicios concretos (uno para el desplegamiento, uno para
+		unos servicios concretos (uno para el despliegue, uno para
 		monitorización, \ldots).
 
 	\item [\uplfs:] PlanetLab File System (User-mode Side)\\
-		Componente del sistema de ficheros para PlanetLab que funciona en modo
-		usuario.
+		Componente del sistema de ficheros para PlanetLab que funciona
+		en modo usuario.
 		\\
 		Este componente en realidad hace de intermediario entre el
 		propio sistema de ficheros (es decir, el núcleo) y los
@@ -32,24 +32,24 @@ componentes que necesitaría el sistema presentado (figura
 
 	% TODO: intercambiar dpld <--> dplc ?!?! tendria mas sentido?
 	\item [\dpld:] Deployer Daemon\\
-		Componente encargado de mandar las órdenes de desplegamiento y
+		Componente encargado de mandar las órdenes de despliegue y
 		mantener actualizada la visión que tiene el usuario sobre los
-		slices de desplegamiento.
+		slices de despliegue.
 
 	\item [\pldb :] PlanetLab Data Base (para obtener inicialmente la lista
 		de nodos de un slice)\\
 		Componente para obtener datos de PlanetLab Central (PLC).
 
 	\item [\umcc :] User-mode Multicast Client\\
-		Componente encargado de las comunicaciones entre un sistema cualquiera
-		y la red multicast.
+		Componente encargado de las comunicaciones entre un sistema
+		cualquiera y la red multicast.
 
 	\item [\umcr :] User-mode Multicast Router\\
 		Componente encargado de enrutar paquetes multicast.
 
 	\item [\dplc :] Deployer Client\\
-		Componente encargado de desplegar los ficheros en un nodo e informar
-		de los slices que tiene creados.
+		Componente encargado de desplegar los ficheros en un nodo e
+		informar de los slices que tiene creados.
 
 	\item [\famon:] File Alteration Monitor\\
 		Componente encargado de vigilar qué ficheros cambian en un nodo.
@@ -61,109 +61,6 @@ componentes que necesitaría el sistema presentado (figura
 	\caption{Arquitectura del Sistema}
 	\label{fig:arquitectura}
 \end{figure}
-
-
-
-\section{Lógica del sistema}
-
-El sistema, además de las funcionalidades propias de despliegue de
-aplicaciones, debe poder realizar las siguientes operaciones para poder saber
-como llegar y a dónde puede llegar. Es decir, debe poder conseguir la
-información necesaria sobre los slices disponibles en PlanetLab y sus nodos, y
-por otra parte, debe poder descubrir su punto de entrada a la red multicast
-desde el exterior.
-
-De modo que el sistema debe permitir:
-
-\begin{itemize}
-	\item Descubrimiento de slices en PlanetLab \\
-		Al acceder al sistema de ficheros (\kplfs-\uplfs), hay que preguntar a
-		un servicio de PlanetLab si existe o no un slice dado (al hacer un
-		move de un ejectuable a un directorio que es un slice) o cuáles
-		existen (al hacer un ls para ver los slices disponibles).
-
-		Para ello, hace falta encontrar el nodo con el servicio de PlanetLab
-		de BD \textbf{más cercano} (por ahora solo hay uno, y es
-		\textit{PlanetLab Central}) y preguntarle:
-		\begin{itemize}
-			\item si existe un slice concreto
-
-			\item qué slices hay
-		\end{itemize}
-
-	\item Descubrimiento de nodos en PlanetLab \\
-		Como en el caso anterior, nos hace falta preguntar a PlanetLab por los
-		nodos, tanto a nivel general, como por los asociados a un slice.
-
-	\item Descubrimiento del nodo de entrada a la red de distribución
-		multicast.
-\end{itemize}
-
-Con tal de minimizar la latencia y ocupación innecesaria del ancho de banda,
-para todos los anteriores puntos hace falta encontrar el nodo \textbf{más
-cercano} que da un servicio concreto.
-
-% + TODO: consensuar
-Para ello, se podría utilizar un servicio DNS al estilo Akamai, tal como
-utiliza google, o algo como CoDNS \cite{CoDNS}, subproyecto de Codeen
-\cite{Codeen}, que nos dan la IP del nodo más cercano que proporciona un
-servicio conreto. Cabe notar, además, que éste es un servicio que PlanetLab
-planea dar a todos sus nodos y que tiene como tarea pendiente implementar.
-
-Como el servicio de DNS se utiliza siempre de forma transparente, aunque dé un
-servicio no habitual de localidad, no lo pondremos en el esquema de nuestros
-componentes para mejorar su claridad.
-
-
-
-\section{Seguridad}
-
-% TODO: seguramente deberá moverse de sitio
-Puesto que la autentificación de todos los clientes es obligatoria en
-PlanetLab, cada vez que un cliente (\dpld en uestro caso) intente una operación
-con un cliente (\dplc) con el que no está autentificado, deberá primero relizar
-el proceso de autentificación.
-
-Dicho proceso va dirigido a proporcionar la clave y password SSH a los \dplc y
-verificar que pueden realizar la conexión (que no cerrarán hasta
-pasado un cierto tiempo de inactividad, para evitar la costosa operación de
-realizar la conexión SSH), verificando así la autenticidad del acceso del
-cliente a un slice concreto.
-
-Para ello, cada \dpld tiene su par de llaves, que llamaremos $K_{pub_{d}}$ y
-$K_{priv_{d}}$ para las claves pública y privada, respectivamente, y los \dplc,
-que son administrados por una única identidad de confianza, tienen todos un
-mismo par de llaves, que llamaremos $K_{pub_{c}}$ y $K_{priv_{c}}$.
-
-%TODO: como controlar que los datos vienen de alguien ya autentificado?
-
-%TODO: como avisa un nodo a un cliente que este no esta autentificado?
-
-Los pasos a seguir son:
-
-\begin{enumerate}
-	\item Se consulta con PlanetLab Central y se escoge un nodo cualquiera
-		del slice con el que nos queremos comunicar.
-		\label{step:auth_get_node}
-
-	\item Se pide la clave pública del nodo seleccionado, $K_{pub_{c}}$, y
-		se le da la pública del cliente, $K_{pub_{d}}$.\\
-		Si el nodo no responde, se vuleve al paso
-		\ref{step:auth_get_node}).
-
-	\item Se hace una petición de registro unicast al nodo, con la clave y
-		password SSH encriptados con $K_{pub_{c}}$, juntamente con
-		$K_{pub_{d}}$ para el envío encriptado de datos sensibles
-		(listado de ficheros, etc.).\\
-		Si la operación falla, se aborta el proceso de registro.
-		Si el nodo no responde, se vuleve al paso
-		\ref{step:auth_get_node}).
-
-	\item Se hace una petición de registro multicast al grupo, con la clave
-		y password SSH encriptados con $K_{pub_{c}}$, juntamente con
-		$K_{pub_{d}}$.
-\end{enumerate}
-% - TODO: consensuar
 
 
 
@@ -194,6 +91,8 @@ ficheros como se puede apreciar en la figura:
 
 \begin{code}
 	/plfs
+	|-publickey
+	|-privatekey
 	|-slices
 	| `-<slice>
 	|   |-backup
@@ -213,10 +112,21 @@ ficheros como se puede apreciar en la figura:
 A continuación una explicación de los diferentes ficheros y directorios:
 
 \begin{description}
+	\item[\texttt{/plfs/publickey}] :\\
+		Este fichero contiene la clave pública del \dpld para que
+		funcione todo el sistema de seguridad (ver apartado
+		\ref{sect:segurity}).
+
+	\item[\texttt{/plfs/privatekey}] :\\
+		Este fichero contiene la clave privada del \dpld para que
+		funcione todo el sistema de seguridad (ver apartado
+		\ref{sect:segurity}).
+	
 	\item[\texttt{/plfs/slices/\textless{}slice\textgreater/backup}] :\\
 		Este fichero contiene una URI que indica el repositorio central
 		de backup donde se puedan encontrar los ficheros \texttt{shared}
-		en su versión original (ver el apartado 2.x sobre Redespliegue).
+		en su versión original (ver el apartado \ref{sect:redeployment}
+		sobre Redespliegue).
 
 	\item[\texttt{/plfs/slices/\textless{}slice\textgreater/key}] :\\
 		Este fichero contiene la clave privada ssh correspondiente al
@@ -227,34 +137,34 @@ A continuación una explicación de los diferentes ficheros y directorios:
 		del slice.
 
 	\item[\texttt{/plfs/slices/\textless{}slice\textgreater/script}] :\\
-		Éste fichero es un shell script que se ejecutará en cada máquina una
-		vez hecho el desplegamiento.
+		Éste fichero es un shell script que se ejecutará en cada máquina
+		una vez hecho el despliegue.
 		\\
 		El script tiene un sólo parámetro que puede ser:
 
-		% TODO(~): NOTA MENTAL: ¿al terminar la máquina virtual, ya
-		% ejecutará dicho startup->stop?
-		% => potser caldria comentar-ho a la documentaco (com a que ho donem per fet)
 		\begin{description}
 			\item [start:] lleva a cabo las operaciones para
 				arrancar el servicio desplegado
 
 			\item [stop:] lleva a cabo las operaciones para parar
-				el servicio
+				el servicio (NOTA: al terminar una máquina
+				virtual, PlanetLab ejecuta el script con este
+				parámetro)
 
 			\item [deploy:] lleva a cabo las operaciones necesarias
 				para preparar el arranque del servicio
 		\end{description}
 
-	\item[\texttt{/plfs/slices/\textless{}slice\textgreater/nodes/\textless{}node\textgreater/unshared}] :\\
-		Éste directorio es propio de cada nodo en el contexto del slice que
-		estamos mirando; puede servir para guardar ficheros de configuración
-		específicos de cada máquina, sin hacer nunca un desplegamiento al
-		grupo entero.
+	\item[\texttt{/plfs/slices/\textless{}slice\textgreater/nodes/\textless{}
+		node\textgreater/unshared}] :\\
+		Éste directorio es propio de cada nodo en el contexto del slice
+		que estamos mirando; puede servir para guardar ficheros de
+		configuración específicos de cada máquina, sin hacer nunca un
+		despliegue al grupo entero.
 
 	\item[\texttt{/plfs/slices/\textless{}slice\textgreater/shared}] :\\
 		Éste directorio contiene los ficheros de los que se hace un
-		desplegamiento al grupo entero (slice). La condición que deben
+		despliegue al grupo entero (slice). La condición que deben
 		cumplir los contenidos de éste directorio, es que sean
 		inmutables de cara a \plfs.
 \end{description}
@@ -290,12 +200,13 @@ la línea de comandos):
 		\end{itemize}
 
 	\item [\texttt{mv}] :\\
-		Lo que nosotros implementaremos será un \textit{move} de ficheros
-		(aplicación a desplegar) a un slice (conjunto de nodos, representado
-		por el directorio
-		\texttt{/plfs/slices/\textless{slice\textgreater/shared}}) o nodo
-		concreto (representado por el directorio
-		\texttt{/plfs/slices/\textless{slice\textgreater/nodes/\textless{}node\textgreater/unshared}}).
+		Lo que nosotros implementaremos será un \textit{move} de
+		ficheros (aplicación a desplegar) a un slice (conjunto de nodos,
+		representado por el directorio
+		\texttt{/plfs/slices/\textless{slice\textgreater/shared}}) o
+		nodo concreto (representado por el directorio
+	\texttt{/plfs/slices/\textless{slice\textgreater/nodes/\textless{}
+	node\textgreater/unshared}}).
 		Es decir, \textbf{NO} permitiremos operaciones como:
 
 		\begin{itemize}
@@ -307,12 +218,12 @@ la línea de comandos):
 		\end{itemize}
 
 	\item [\texttt{cp}] :\\
-		Igual que en un \textit{move}, pero copiando los ficheros de orígen.
+		Igual que en un \textit{move}, pero copiando los ficheros de
+		orígen.
 
 	\item [\textit{edición}] :\\
 		La edición de un fichero provocará el redespliegue del mismo
-		una vez sea cerrado.
-		%TODO \cite (ver apartado 2.x sobre Redespliegue)
+		una vez sea cerrado (ver apartado \label{sect:redeployment}).
 
 	\item [\textit{lectura}] :\\
 		La lectura de un fichero provocará su importación previa en
@@ -331,9 +242,11 @@ la línea de comandos):
 		distintas:
 
 		\begin{itemize}
-			\item En \texttt{/plfs/slices}: Crea un slice sin nodos asociados
+			\item En \texttt{/plfs/slices}: Crea un slice sin nodos
+				asociados
 
-			\item En \texttt{/plfs/slices/\textless{}slice\textgreater/nodes}:
+			\item En
+		\texttt{/plfs/slices/\textless{}slice\textgreater/nodes}:
 				Añade un nodo a un slice
 
 			\item En \texttt{/plfs/nodes}: Añade un nodo al sistema
@@ -345,21 +258,23 @@ la línea de comandos):
 		\end{itemize}
 
 		Los tres primeros puntos, como no entran dentro del
-		desplegamiento de aplicaciones, no han sido pensados en
+		despliegue de aplicaciones, no han sido pensados en
 		profundidad para llevarlos a cabo.
 
 	\item [\texttt{rmdir}] :\\
-		Igual que en el caso anterior, según en que directorio se haga, las
-		implicaciones son distintas:
+		Igual que en el caso anterior, según en que directorio se haga,
+		las implicaciones son distintas:
 
 		\begin{itemize}
-			\item En \texttt{/plfs/slices}: Elimina un slice de PlanetLab
+			\item En \texttt{/plfs/slices}: Elimina un slice de
+				PlanetLab
 
-			\item En \texttt{/plfs/slices/\textless{}slice\textgreater/nodes}:
+			\item En
+		\texttt{/plfs/slices/\textless{}slice\textgreater/nodes}:
 				Elimina un nodo de un slice
 
-			\item En \texttt{/plfs/nodes}: Elimina un nodo del sistema
-				PlanetLab
+			\item En \texttt{/plfs/nodes}: Elimina un nodo del
+				sistema PlanetLab
 
 			\item En los directorios \texttt{shared} y
 				\texttt{unshared} elimina el directorio que
@@ -367,7 +282,7 @@ la línea de comandos):
 		\end{itemize}
 
 		De nuevo, los tres primeros puntos, como no entran dentro del
-		desplegamiento de aplicaciones, no han sido pensados en
+		despliegue de aplicaciones, no han sido pensados en
 		profundidad para llevarlos a cabo.
 
 	\item [\texttt{touch}] :\\
@@ -385,11 +300,69 @@ la línea de comandos):
 
 
 
-\section{Lógica de Desplegamiento}
+\section{Descubrimiento de entidades del sistema}
+
+El sistema, además de las funcionalidades propias de despliegue de
+aplicaciones, debe poder realizar las siguientes operaciones para poder saber
+como llegar y a dónde puede llegar. Es decir, debe poder conseguir la
+información necesaria sobre los slices disponibles en PlanetLab y sus nodos, y
+por otra parte, debe poder descubrir su punto de entrada a la red multicast
+desde el exterior.
+
+De modo que el sistema debe permitir:
+
+\begin{itemize}
+	\item Descubrimiento de slices en PlanetLab \\
+		Al acceder al sistema de ficheros (\kplfs-\uplfs), hay que
+		preguntar a un servicio de PlanetLab si existe o no un slice
+		dado (al hacer un move de un ejectuable a un directorio que es
+		un slice) o cuáles existen (al hacer un ls para ver los slices
+		disponibles).
+
+		Para ello, hace falta encontrar el nodo con el servicio de
+		PlanetLab de BD \textbf{más cercano} (por ahora solo hay uno, y
+		es \textit{PlanetLab Central}) y preguntarle:
+		
+		\begin{itemize}
+			\item si existe un slice concreto
+
+			\item qué slices hay
+		\end{itemize}
+
+	\item Descubrimiento de nodos en PlanetLab \\
+		Como en el caso anterior, nos hace falta preguntar a PlanetLab
+		por los nodos, tanto a nivel general, como por los asociados a
+		un slice.
+
+	\item Descubrimiento del nodo de entrada a la red de distribución
+		multicast.
+
+\end{itemize}
+
+Con tal de minimizar la latencia y ocupación innecesaria del ancho de banda,
+para todos los anteriores puntos hace falta encontrar el nodo \textbf{más
+cercano} que da un servicio concreto.
+
+Para ello, se podría utilizar un servicio DNS al estilo Akamai, tal como
+utiliza google, o algo como CoDNS \cite{CoDNS}, subproyecto de Codeen
+\cite{Codeen}, que nos dan la IP del nodo más cercano que proporciona un
+servicio conreto. Cabe notar, además, que éste es un servicio que PlanetLab
+planea dar a todos sus nodos y que tiene como tarea pendiente implementar.
+
+Como el servicio de DNS se utiliza siempre de forma transparente, aunque dé un
+servicio no habitual de localidad, no lo pondremos en el esquema de nuestros
+componentes para mejorar su claridad.
+
+
+
+\section{Lógica de Despliegue}
 
 % TODO: HAY QUE AVISAR DE CUALES SE HA PODIDO DESPLEGAR Y CUALES NO
+%
 % que hacer con los que se han quedado a medias/han fallado?
-% estaria bien un fichero de estado? Lista de nodos registrados en PLC en el slice, con:
+%
+% estaria bien un fichero de estado? Lista de nodos registrados en PLC en el
+% slice, con:
 % - ultima operacion realizada
 % - ultima operacion fallida
 % - ultima operacion en proceso
@@ -426,18 +399,19 @@ del sistema:
 		desde \uplfs hacia \dplc).
 
 	\item \uplfs $\rightarrow$ \dpld \\
-		\uplfs redirige el mensaje al componente indicado por este (\dpld),
-		puesto que \kplfs puede manejar la vista de diferentes componentes.
+		\uplfs redirige el mensaje al componente indicado por este
+		(\dpld), puesto que \kplfs puede manejar la vista de diferentes
+		componentes.
 
 	\item \dpld $\rightarrow$ \umcc \\
-		Se comunica el slice destino, se dan los ficheros a desplegar y el
-		shell script con los comandos a ejecutar una vez desplegados.
+		Se comunica el slice destino, se dan los ficheros a desplegar y
+		el shell script con los comandos a ejecutar una vez desplegados.
 
 	\item \umcc $\rightarrow$ red \umcr \\
 		Se inyectan los paquetes a enviar con destino a un grupo en la
 		red \umc.\\
 		En nuestro caso, el grupo destino sería un slice y el
-		desplegamiento se realizará a aquellos nodos donde haya \dplc,
+		despliegue se realizará a aquellos nodos donde haya \dplc,
 		de modo que serán siempre conocidos por la red multicast.
 
 	\item intra-red \umcr (red multicast) \\
@@ -457,10 +431,10 @@ del sistema:
 		El módulo \umcc hace llegar los paquetes a desplegar al \dplc.
 
 	\item \dplc $\rightarrow$ slice destino (ssh) \\
-		Se despliega la aplicación (se copian los ficheros), y una vez hecho
-		esto, se ejecuta el shell script adjuntado, en caso de estar
-		presente. Para ello, primero ejecuta el \textbf{deploy} y luego
-		el \textbf{start}.
+		Se despliega la aplicación (se copian los ficheros), y una vez
+		hecho esto, se ejecuta el shell script adjuntado, en caso de
+		estar presente. Para ello, primero ejecuta el \textbf{deploy} y
+		luego el \textbf{start}.
 		% TODO: diferenciar primeros de ultimo fichero
 		% ahora el ultimo debe ser el script y se hara el deploy+start
 \end{enumerate}
@@ -474,7 +448,7 @@ del sistema:
 
 \section{Comunicación Multicast}
 
-Como hemos comentado, el desplegamiento de los ficheros se hace sobre una red
+Como hemos comentado, el despliegue de los ficheros se hace sobre una red
 multicast, por lo que hace falta describir algunas de sus características que
 asumiremos de ahora en adelante para el diseño de los componentes del sistema.
 
@@ -490,8 +464,8 @@ Las operaciones que debe proporcionar esta red multicast son las siguientes:
 
 En nuestro caso, veremos como \dplc gestiona las inscripciones/desuscripciones
 a los grupos multicast, dichos grupos serán realmente los slice destino a los
-que se quiera realizar el desplegamiento de las aplicaciones. De modo que,
-cuando se quiera hacer dicho desplegamiento, desde \dpld, no será necesario
+que se quiera realizar el despliegue de las aplicaciones. De modo que,
+cuando se quiera hacer dicho despliegue, desde \dpld, no será necesario
 consultar previamente a PlanetLab Central (mediante \pldb) sobre la pertinencia
 de los nodos a un grupo. Es decir, el grupo ya está previamente creado.
 
@@ -576,7 +550,91 @@ cabo, se invalidaría el nodo del slice, y quedaría como corrupto.
 
 
 
-% TODO (!!!!!): Cuando se abren las conexiones SSH? timeout?
-%       Cuando se dan las claves y passwd ssh?
+\section{Seguridad}
+\label{sect:security}
+
+Puesto que la autentificación de todos los clientes es obligatoria en
+PlanetLab, cada vez que un cliente (\dpld en uestro caso) intente una operación
+con un nodo (\dplc) con el que no está autentificado, deberá primero relizar
+el proceso de autentificación.
+
+Dicho proceso va dirigido a proporcionar la clave y password SSH a los \dplc y
+verificar que pueden realizar la conexión (que no cerrarán hasta
+pasado un cierto tiempo de inactividad, para evitar la costosa operación de
+realizar la conexión SSH), verificando así la autenticidad del acceso del
+cliente a un slice concreto.
+
+Para ello, cada \dpld tiene su par de llaves, que llamaremos $K_{pub_{d}}$ y
+$K_{priv_{d}}$ para las claves pública y privada, respectivamente, y los \dplc,
+que son administrados por una única identidad de confianza, tienen todos un
+mismo par de llaves, que llamaremos $K_{pub_{c}}$ y $K_{priv_{c}}$.
+
+Para controlar que los datos recibidos en los \dplc proceden de un \dpld
+previamente autentificado, utilizaremos una firma eléctronica con
+$K_{priv_{d}}$ (puesto que los \dplc conocen $K_{pub_{d}}$).
+
+Los pasos a seguir son:
+
+\begin{enumerate}
+	\item Se consulta con PlanetLab Central y se escoge un nodo cualquiera
+		del slice con el que nos queremos comunicar.
+		\label{step:auth_get_node}
+
+	\item Se pide la clave pública del nodo seleccionado, $K_{pub_{c}}$, y
+		se le da la pública del cliente, $K_{pub_{d}}$.\\
+		Si el nodo no responde, se vuleve al paso
+		\ref{step:auth_get_node}).
+
+	\item Se hace una petición de registro unicast al nodo, con la clave y
+		password SSH encriptados con $K_{pub_{c}}$, juntamente con
+		$K_{pub_{d}}$ para el envío encriptado de datos sensibles
+		(listado de ficheros, etc.).\\
+		Si la operación falla, se aborta el proceso de registro.
+		Si el nodo no responde, se vuleve al paso
+		\ref{step:auth_get_node}).
+
+	\item Se hace una petición de registro multicast al grupo, con la clave
+		y password SSH encriptados con $K_{pub_{c}}$, juntamente con
+		$K_{pub_{d}}$.
+\end{enumerate}
+
+%TODO: como avisa un nodo a un cliente que este no esta autentificado?
+Hay varios casos en los que una operación realizada por un \dpld no podría ser
+llevada a cabo en un \dplc:
+
+\begin{itemize}
+	\item Se añade un nuevo nodo después de haber hecho el proceso de
+		registro, de modo que \dpld no está registrado en ese nodo.
+
+	\item \dplc cierra la conexión ssh por falta de operaciones durante
+		cierto tiempo de \textit{timeout}, de modo que no se puede
+		hacer llegar las operaciones enviadas por \dpld.
+
+	\item Cambio del par de claves del \dplc, de forma que no
+		se pueden verificar las operaciones enviadas por \dpld.
+	
+\end{itemize}
+
+La solución que hemos pensado para estos tres casos anteriores, es la de
+realizar nuevos registros. En el primer caso, \dplc avisaría mediante un
+\textit{warning} (ver apartado \ref{sect:warnings}), y \dpld realizaría un
+registro unicast en ese nodo. En los otros casos \dpld realizaría de
+nuevo el registro multicast cada cierto tiempo (política de revalidación).
+Cabe notar que las conexiones que \dpld mantiene con los slices tienen un
+\textit{timeout} asociado, de modo que una vez expirado se perderán los datos
+de dichas conexiones y si posteriormente se quisiera realizar una operación en
+alguno de esos slices se deberá reiniciar de cero el proceso de registro.
+
+En el caso en que se hayan cambiado la clave y/o el password ssh y que la
+conexión ssh esté cerrada, el \dpld recibiría algunos \textit{warnings}
+procedentes de los \dplc destinatarios con la conexión ssh cerrada (que serán
+una minoría debido a la política de revalidación de registros comentada
+anteriormente).
+
+Como los datos desplegados por \dpld van firmados para evitar problemas de
+suplantación de identidad, en el caso de que \dpld modifique su par de claves
+deberá propagar la clave pública mediante un registro multicast a los slices
+con los que tuviera una relación abierta.
 
 % TODO(?): 'ls' => renew => cheksums??
+% => invalidar els fitxers cada X temps

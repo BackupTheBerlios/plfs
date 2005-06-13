@@ -180,6 +180,7 @@ para
 
 
 \section{\dplc $\rightarrow$ \dpld}
+\label{sect:warnings}
 
 Los nodos \dplc deben informar de los cambios en los grupos slice destino
 a los \dpld que están registrados en ellos para esos slice.
@@ -191,6 +192,8 @@ Los cambios pueden ser:
 	\item Se quita un nodo del slice.
 
 	\item Modificación de ficheros (invalidación).
+
+	\item Se requiere autentificación.
 \end{itemize}
 
 Para anunciar estos cambios hemos diseñado un paquete de warning mediante el
