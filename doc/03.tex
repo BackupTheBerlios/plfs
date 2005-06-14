@@ -80,7 +80,7 @@ Las operaciones que \dpld ofrece son las siguientes:
 		%NOTA: de que puede servir invalidar un objeto del FS?
 
 	% TODO(?): validaciones? temporalidad?     ES ÚTIL PLANTEÁRSELO?
-	
+
 	% TODO: quien lo utiliza?
 	\item[\texttt{getInfoFilesShared (slice\_name)}] :\\
 		Envía una petición a multicast de información de los ficheros
@@ -328,7 +328,7 @@ siguientes:
 % o el nunmero mas grande que den los miembros del grupo
 %   - deben responder todos
 %   - alguien puede engañarnos y dar un numero equivocado?
-%   -> dplc nos firma la version -> garantiza la validez (como el algodon, 
+%   -> dplc nos firma la version -> garantiza la validez (como el algodon,
 %     dplc nuca engaña)
 % o el numero que den la mayoria
 %   - deben responder todos
@@ -346,6 +346,77 @@ siguientes:
 % Al detectar un desfase de las versiones (nodo corrupto?), que hacer:
 % - protocolo de las transparencias
 % - parar y esperar al siguiente deployment
+%
+% ---------------------------------------------------------------
+% => Posible estrategia de sincronizacion por numero de version:
+% ---------------------------------------------------------------
+%
+% => Precondicion: queremos que todos los nodos tengan el mismo shared
+%     siempre!
+%
+% => Formato de version:
+% - numeracion consecutiva
+% - numeracion consecutiva con separadores (.), siendo el override del usuario
+%   el que permite avanzar a una version superior no consecutiva 1.9 -> 2.0
+% - fecha en formato universal (estan los nodos de PL en hora?); como los
+%   deploys no son muy frecuentes, es bastante fiable aun con desfases de
+%   reloj
+%
+% => Como obtener nodos cualesquiera
+% hacer una peticion de la lista a PLC y seleccionar uno aleatoriamente
+%
+% => Pasos
+% - cada nodo en su slice guarda un fichero con el numero de version que se le
+%   ha desplegado (si no existe, se supono que no hay despliegue previo)
+%   (posibilidad de ver un fichero en unshared?)
+%   (posibilidad de ver un fichero en shared con el valor maximo actual?)
+%
+% - dpld obtiene el numero de version que actualmente hay en la red
+%   * cuando:
+%     - al hacer el deploy, pregunta
+%     - en alguna operacion anterior ya lo va haciendo en background por si a
+%       caso
+%     - al hacer el registro unicast, el resultado es la version actual
+%   * como:
+%     - repositorio central (a modo transaccional, solo se actualiza el valor
+%       si se hace el deploy de como minimo N nodos - 1? quizas mas si
+%       utilizamos tecnicas de fallo bizantino? -)
+%     - se guarda el valor en la maquina dpld (demasiado rigido, no podemos
+%       hacer deploy desde diferentes sitios)
+%     - se le hace poner un valor en un fichero al usuario (esta bien como
+%       posibilidad para forzar el valor, pero no como obligacion)
+%     - el valor que nos den de una sola consulta (podria estar desfasado)
+%     - el valor maximo de N preguntas
+%       * si el valor se guarda en el slice, podria estar falseado? a quien le
+%         interesa si es su propio slice?
+%       * si el valor se guarda en dplc, seguro que siempre es el ultimo que
+%         dplc ha visto, no?
+%     - el valor mas ``votado'', por si hubiera alguno falseado (lo habria?)
+%
+% - hace el deploy indicando el nuevo numero de version
+%
+% - existe la posibilidad de que los dplc hagan piggybacking indicando su
+%   version actual, para que dpld:
+%   * se ponga al dia (hay algun problema en coger la mayor aunque solo la
+%     tenga uno? -> pero que no sea de un corrupto!)
+%   * dpld le indique que necesita actualizacion y
+%     - le haga un deploy unicast
+%     - le indique un vecino cercano con la version ``buena''
+%
+% - al arrancar o recuperar la conexion un dplc, obtiene el numero ``bueno''
+%   de version tal como lo hace dpld
+%
+% - si esta desactualizado, obtiene la nueva version de un peer no corrupto
+%
+% - cada dplc guarda los ultimos N nodos (incluyendo dpld) que le han
+%   preguntado su version, si se le cambia la version, lo notifica a estos
+%
+% - cuando llega una notificacion de cambio de version, se hace un redeploy
+%   desde ese peer originador del mensaje
+%   [ deploy virico para los que se han quedado rezagados ]
+%
+% - existencia de un fichero en /plfs/slices/<slice> que al hacerle un cat
+%   intenta contactar todos los nodos y mostrar su estado
 
 
 
