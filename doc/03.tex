@@ -372,6 +372,7 @@ siguientes:
 %   (posibilidad de ver un fichero en shared con el valor maximo actual?)
 %
 % - dpld obtiene el numero de version que actualmente hay en la red
+%   (no necesario si es version por fecha)
 %   * cuando:
 %     - al hacer el deploy, pregunta
 %     - en alguna operacion anterior ya lo va haciendo en background por si a
@@ -417,6 +418,22 @@ siguientes:
 %
 % - existencia de un fichero en /plfs/slices/<slice> que al hacerle un cat
 %   intenta contactar todos los nodos y mostrar su estado
+%
+% => interesante la deteccion de que nodos estan en la misma subred (fichero
+%    de conf de dplc con las redes locales?)
+%    al entrar en funcionamiento, lo pueden hacer en grupo (corte de luz o
+%    reconexion a inet - gracias al RFC TRACK multicast, se da aviso de
+%    eliminacion del grupo multicast, verdad? -)
+%
+% => las caidas son aleatorias, por lo que afectan a nodo separados (bloqueos
+%    de la maquina) o a una institucion o parte de ella (red local)
+%    => no hace falta un redeploy multicast (no habra tantos a la vez como
+%       para hacerlo preferible y viable)
+%    => designar un cabeza de grupo que lo pide a un peer exterior y luego
+%       hace un deploy unicast a
+%       - la direccion multicast del grupo institucional
+%       - cada peer local (si no se puede por multicast... se dara el
+%         caso?)
 
 
 
