@@ -1,7 +1,5 @@
 Multicast:
 ---------
-->http://www.ee.technion.ac.il/people/idish/Abstracts/araneola.html
-->http://dsl.cs.technion.ac.il/completed_projects/Araneola/html/araneola.htm
 > http://www.aqualab.cs.northwestern.edu/projects/Nemo.html
 > http://www.aqualab.cs.northwestern.edu/publications/SBirrer04RGU.pdf
 http://esm.cs.cmu.edu

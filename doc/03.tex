@@ -8,24 +8,43 @@ deben implementar cada uno de los componentes.}}
 
 
 \section{\kplfs}
-Este módulo implementa la interfaz del VFS, y las operaciones que permite las
-hemos descrito en el capítulo anterior en el apartado \ref{sect:deployment}.
 
-% TODO(?): invalidate
+Este módulo implementa la interfaz del VFS, y las operaciones que permite las
+hemos descrito en el capítulo anterior en el apartado \ref{sect:plfsoperations}.
+
+Las operaciones que ofrece, además de las del VFS, son:
+
+\begin{description}
+	\item[\texttt{invalidate (slice\_name, type, path)}] :\\
+		Invalida el fichero determinado por \texttt{path} del slice
+		\texttt{slice\_name} del tipo \texttt{type} (\textit{shared} o
+		\textit{unshared}).
+\end{description}
 
 
 
 \section{\uplfs}
+\label{sect:uplfs}
 
-Las operaciones que \uplfs ofrece, además de las especificadas en el módulo
-\pldb para las que hace de intermediario, son las siguientes:
+Cuando el usuario quiere mirar el contenido del directorio de slices o de
+nodos de un slice, y \kplfs remite dicha operación a \uplfs, este realiza la
+consulta de dicha información llamando a las operaciones que ofrece \pldb, por
+ejemplo mediante llamadas a procedimiento remoto (como podría ser Java RMI,
+soportado por PlanetLab Central).
 
-%TODO: es solo esto?
+Una vez obtenida la información, \uplfs procedería a pasársela a \kplfs el cual
+actualizaría los inodos de \plfs y mostraría el resultado al usuario.
+
+Por ello, las operaciones que \uplfs ofrece, además de las del VFS para las que
+hace de intermediario hacia \kplfs, son las siguientes:
+
 \begin{description}
-	\item[\texttt{execute(component, operation, \ldots)}] :\\
+	\item[\texttt{execute (component, operation, \ldots)}] :\\
 		Llama a la función \texttt{operation} del componente
 		\texttt{component} con los parámetros extra que se indiquen (en caso
 		de indicar alguno).
+		\\
+		Los posibles componentes actualmente son \dpld o \pldb.
 \end{description}
 
 
@@ -34,65 +53,92 @@ Las operaciones que \uplfs ofrece, además de las especificadas en el módulo
 
 Las operaciones que \dpld ofrece son las siguientes:
 
-% TODO: faltan las credenciales de autentificación, o mejor un paso previo de
-% autentificación?!?!?!?!
-% TODO(~): faltan los parametros de que desplegar, etc
-% TODO(~): explicar fichero de comandos etc otra vez? 		NOO!!
-% TODO(~): poner los resultados de las ops
 \begin{description}
-	\item[\texttt{void deployAppToSlice (slice\_name, files[], script, key,
-		passwd,...)}] :\\
-		Realiza la comunicación con el componente \umcc para desplegar
-		una aplicación (files) a través de la red \umcr en el grupo
-		indicado por el slice\_name. Para ello también requerirá el
-		script de inicialización, y la clave y password de ssh del
-		slice.
+	\item[\texttt{deployToSlice (slice\_name, path\_from, path\_to)}]
+		:\\
+		Realiza la comunicación con los componentes \dplc para desplegar
+		un fichero \textit{shared} (\texttt{path\_from}) al slice
+		\texttt{slice\_name} en \texttt{path\_to}.
 		\\
-		% TODO: pero ahora hay TRACK!!!
-		% primer intento + reintentos a solo a quien falla? (pero por multicast si cierto numero)
-		NOTA: La operación no puede devolver resultado de éxito,
-		puesto que la implementación de ACKS en Multicast tiene
-		problemas de escalabilidad, y por lo que hace a los NACKS
-		no creemos que sea muy bueno mantener el \dpld esperando a ver
-		si recibe alguno.
+		Para ello, lee el fichero origen y envía los datos al grupo
+		multicast que representa el slice a través de \umcc.
+		\\
+		Ésta operación provoca un aumento del número de versión del
+		slice.
 
-	\item[\texttt{ void deployAppToNode (slice\_name,
-		node\_name,files,script, key, passwd) }] : \\
-		Lo mismo que deployAppToSlice pero hacia un nodo concreto.
-		Útil, si se añade un nodo a un slice al que se ha realizado ya
-		el despliegue.
+	\item[\texttt{deployToNode (slice\_name, node\_name, path\_from,
+		path\_to) }] :\\
+		Lo mismo que \texttt{deployToSlice} pero hacia un nodo concreto
+		para desplegar un fichero \textit{unshared}.
 
-	\item[\texttt{void addNodeToSlice (slice\_name, node\_name)}] :\\
-		Crea el directorio que representa al nodo en el sistema de
-		ficheros y posteriormente ejecuta \texttt{deployAppToNode}.
+	\item[\texttt{getInfoShared (slice\_name, path)}] :\\
+		Hace una petición de información de un objeto \textit{shared}
+		del sistema de ficheros del slice \texttt{slice\_name} a un nodo
+		cualquiera.
+		\\
+		Si la petición falla, lo intentará con otro nodo cualquiera,
+		hasta llegar a un número máximo de reintentos.
 
-	\item[\texttt{registerToDplc (node\_name, slice\_name)}] :\\
-		Se registra el nodo de \dpld como oyente de los cambios que se
-		producen en un slice de un nodo concreto.
-		% TODO(?): se puede utilizar un grupo de oyentes a cambios en
-		% grupos de dplc, así no hace falta el registro...
+	\item[\texttt{getInfoUnshared (slice\_name, node\_name, path)}] :\\
+		Hace una petición de información de un objeto \textit{unshared}
+		del sistema de ficheros del slice \texttt{slice\_name} al nodo
+		\texttt{node\_name}.
+		\\
+		Si la operación falla, se reintentará un número finito de veces.
 
-	\item[\texttt{invalidateObj (slice\_name, name)}] :\\
-		% TODO(?): utilizar identificador de obj diferente del path?
-		% hace falta nombre del slice? (path completo)
+	\item[\texttt{getFileShared (slice\_name, path)}] :\\
+		Hace una petición de un objeto \textit{shared} del
+		sistema de ficheros del slice \texttt{slice\_name} a un nodo
+		cualquiera.
+		\\
+		Si la petición falla, lo intentará con otro nodo cualquiera,
+		hasta llegar a un número máximo de reintentos.
+
+	\item[\texttt{getFileUnshared (slice\_name, node\_name, path)}] :\\
+		Hace una petición de un objeto \textit{unshared} del sistema de
+		ficheros del slice \texttt{slice\_name} al nodo
+		\texttt{node\_name}.
+		\\
+		Si la operación falla, se reintentará un número finito de veces.
+
+	\item[\texttt{deleteFileShared (slice\_name, path)}] :\\
+		Hace la petición de eliminación de un objeto del sistema de
+		ficheros (\texttt{path}) de todo el slice \texttt{slice\_name}.
+		\\
+		Ésta operación provoca un aumento del número de versión del
+		slice.
+
+	\item[\texttt{deleteFileUnshared (slice\_name, node\_name, path)}] :\\
+		Hace la petición de eliminación de un objeto del sistema de
+		ficheros (\texttt{path}) de un nodo \texttt{node\_name} del
+		slice \texttt{slice\_name}.
+		\\
+		Si la operación falla, se reintentará un número finito de veces.
+
+	\item[\texttt{getSliceNodeVersion (slice\_name, node\_name)}] :\\
+		Permite obtener la versión del slice \texttt{slice\_name} desde
+		el nodo \texttt{node\_name}.
+
+	\item[\texttt{registerNeeded (slice\_name, node\_name)}] :\\
+		Petición de necesidad de registro.
+	
+	\item[\texttt{addNodeToSlice (slice\_name, node\_name)}] :\\
+		Informa de la adición de un nodo a un slice.
+
+	\item[\texttt{removeNodeToSlice (slice\_name, node\_name)}] :\\
+		Informa de la eliminación de un nodo a un slice.
+
+	\item[\texttt{invalidate (slice\_name, node\_name, type, path)}] :\\
 		Invalida un objeto del sistema de ficheros (un fichero o un
 		directorio).
-		%NOTA: de que puede servir invalidar un objeto del FS?
-
-	% TODO(?): validaciones? temporalidad?     ES ÚTIL PLANTEÁRSELO?
-
-	% TODO: quien lo utiliza?
-	\item[\texttt{getInfoFilesShared (slice\_name)}] :\\
-		Envía una petición a multicast de información de los ficheros
-		de tipo \textit{shared} del slice \textit{slice\_name}.
-
-	% TODO: quien lo utiliza?
-	\item[\texttt{getInfoFilesUnshared (node\_name,slice\_name)}] :\\
-		Envía una petición unicast hacia el \dplc del nodo
-		\textit{node\_name} de información acerca de los ficheros de
-		tipo \textit{unshared} del slice \textit{slice\_name} para dicho
-		nodo.
 \end{description}
+
+En todas las anteriores operaciones, excepto las cuatro últimas, se puede dar el
+caso de que el/los \dplc destinatarios de las operaciones no hayan pasado por
+un proceso de registro desde el \dpld orígen, por lo que se puede recibir un
+aviso de necesidad de registro, al cual reaccionará con un registro
+(\textit{unicast} o \textit{multicast} según el número de destinatarios de la
+operación).
 
 
 
@@ -101,52 +147,40 @@ Las operaciones que \dpld ofrece son las siguientes:
 \pldb permite acceder a información relativa a la administración de slices y
 nodos de PlanetLab.
 
-En concreto, las operaciones que ofrece (API), son:
+Las operaciones que ofrece son:
 
 \begin{description}
-	\item[\texttt{getSlices}] :\\
+	\item[\texttt{getSlices ()}] :\\
 		Permite obtener la lista de slices que se han dado de alta en
 		PlanetLab
 
-	\item[\texttt{getNodes}] :\\
+	\item[\texttt{getNodes ()}] :\\
 		Permite obtener la lista de nodos que se han dado de alta en
 		PlanetLab
 
-	\item[\texttt{getSlice (slice\_name)}] :\\
-		Permite obtener información de un slice
-
-	\item[\texttt{getNode (node\_name)}] :\\
-		Permite obtener información de un nodo
-
 	\item[\texttt{getSliceNodes (slice\_name)}] :\\
-		Permite obtener los nodos que hay en un slice
+		Permite obtener la lista de los nodos que hay en un slice
+
+	\item[\texttt{getSliceNodesAny (slice\_name, num)}] :\\
+		Permite obtener una lista de \texttt{num} nodos cualesquiera de
+		un slice
+
+	\item[\texttt{getSliceNodesNumber (slice\_name)}] :\\
+		Permite obtener el numero de nodos que hay en un slice
 
 	\item[\texttt{getNodeSlices (node\_name)}] :\\
-		Permite obtener los slices de un nodo
+		Permite obtener la lista de los slices de un nodo
 
 	\item[\texttt{getSliceNode (slice\_name, node\_name)}] :\\
 		Permite obtener información de un nodo de un slice
 
-	\item[\texttt{getNodeSlice (node\_name, slice\_name)}] :\\
-		Permite obtener información de un slice de un nodo
+	\item[\texttt{getSliceNodeAny (slice\_name)}] :\\
+		Permite obtener un nodo cualquiera de un slice
 
-	\item[\texttt{addSlice (slice\_name)}] :\\
-		Permite añadir un slice
-
-	\item[\texttt{addNode (node\_name)}] :\\
-		Permite añadir un nodo
-
-	\item[\texttt{addSliceNode (slice\_name, node\_name)}] :\\
-		Permite añadir un nodo en un slice
-
-	\item[\texttt{removeSlice (slice\_name)}] :\\
-		Permite eliminar un slice
-
-	\item[\texttt{removeNode (node\_name)}] :\\
-		Permite eliminar un nodo
-
-	\item[\texttt{removeSliceNode (slice\_name, node\_name)}] :\\
-		Permite eliminar un nodo de un slice
+	\item[\texttt{getSliceNodeNearest (slice\_name)}] :\\
+		Permite obtener el nodo mas cercado de un slice
+		(aprovechándose, si se da el caso, de un sistema DNS con
+		soporte para ``localidad'').
 \end{description}
 
 Para obtener toda esta información, hace falta utilizar la API que ofrece
@@ -157,69 +191,66 @@ PlanetLab Central \cite{PLC}.
 \section{\umcc}
 \label{sect:umcc}
 
-Éste es el módulo cliente de la red multicast, básicamente tiene dos
-funciones:
+Éste es el módulo cliente de la red multicast, que básicamente tiene las
+dos siguientes funcionalidades:
 
 \begin{description}
-	\item Enviar los datos a desplegar al nodo \umcr más cercano.
+	\item Enviar los datos al nodo \umcr más cercano para que los haga
+		llegar al grupo de destino.
 
-	\item Recibir los datos a desplegar y hacerlos llegar al módulo dplc.
+	\item Recibir los datos procedentes de \umcr y hacerlos llegar al
+		componente al que van destinados.
 \end{description}
 
 El primer caso, se da cuando \dpld ordena el despliegue de una
 aplicación/servicio hacia un slice destino. En este caso deberá comunicarse
-con el módulo umcr más cercano para comunicarle los datos necesarios.
-El segundo caso, se da cuando un nodo \umcr le comunica que se debe desplegar
-una aplicación/servicio en el nodo dónde \umcc reside, en este caso deberá
-comunicare con el módulo \dplc para hacerle llegar los datos de despliegue.
+con el módulo \umcr más cercano para comunicarle los datos necesarios.
+
+El segundo caso, se da cuando un nodo \umcc comunica a \dplc que se debe
+desplegar una aplicación/servicio en el nodo dónde éste reside. En este caso
+deberá comunicase con él para hacerle llegar los datos.
 
 De modo que las operaciones que ofrece, son:
 
-% TODO(~): seguridad a la hora de hacer cambios? umcc va en la máquina de
-% administración (se puede modificar lo que se quiera)      .... I????
-%TODO(?): ``dns''?  ------- PQ EL GRUPID NO POT SER SLICE_NAME?
-%			    TB SERVIRIA SI VOLEM ENVIAR A SLICE
-%			    DPLD WARNINGS
 \begin{description}
 	\item[\texttt{group\_id getGroup (group\_name)}] :\\
 		Permite obtener el identificador, dentro de la red \umc, de un
 		grupo.
 
 	\item[\texttt{setOptions (group\_id, options[])}] :\\
-		%TODO(?): QUE FA AIXO??
-		%TODO(?): necesario? depende del soft multicast de debajo
+		Permite cambiar las posibles opciones que permita la
+		implementación concreta del software multicast que usemos.
 
+	\item[\texttt{setOptions (group\_id, options[])}] :\\
+		Permite obtener las posibles opciones que permita la
+		implementación concreta del software multicast que usemos.
+	
 	\item[\texttt{sendData (group\_id, data)}] :\\
-		Permite enviar datos a un grupo
+		Permite enviar datos a un grupo.
 
 	\item[\texttt{recieveData (group\_id, data)}] :\\
-		Recibe datos procedentes de un emisor del grupo, y se los pasa
-		al módulo \dplc (quien se encargará del despliegue.
+		Permite recibir datos procedentes de un emisor del grupo.
 
-	%TODO(~): addGroup / deleteGroup ?
+	\item[\texttt{joinSender (group\_id, node\_name)}] :\\
+		Permite añadir un nodo emisor a un grupo multicast.
 
-	\item[\texttt{join (group\_name, node\_name)}] :\\
-		%TODO(?): hace falta el nombre o ya va bien por remitente?
-		%TODO(?): cómo hacer el join de otro?
-		Permite añadir un nodo a un grupo multicast
+	\item[\texttt{deleteSender (group\_id, node\_name)}] :\\
+		Permite eliminar un nodo emisor de un grupo multicast.
 
-	\item[\texttt{delete (group\_id, node\_name)}] :\\
-		%TODO(?): hace falta el nombre o ya va bien por remitente?
-		%TODO(?): cómo hacer el delete de otro?
-		Permite eliminar un nodo de un grupo multicast
+	\item[\texttt{joinReceiver (group\_id, node\_name)}] :\\
+		Permite añadir un nodo receptor a un grupo multicast.
+
+	\item[\texttt{deleteReceiver (group\_id, node\_name)}] :\\
+		Permite eliminar un nodo receptor de un grupo multicast.
 \end{description}
 
 La ventaja de éste módulo es que es totalmente inocuo, por lo que se puede
 utilizar la arquitectura de \umc (\umcc + \umcr) en cualquier aplicación, y
 permite que se puedan utilizar otros proyectos ya realizados.
 
-% TODO(~): estudiarlo!!!
-% El punto que aún no hemos aclarado es si el propio identificador de grupo
-% multicast será el identificador de slice (VOTO POR ELLO!!!!!!!!!!!) o algún
-% otro de más genérico (que requeriría una nueva capa de administración de
-% grupos multicast).
-%
-% Depende del software de multicast que se utilice! (araneola)
+Un punto que queda sin controlar es el acceso restringido a la red multicast,
+es decir faltaría una autentificación de emisores, por lo que se podrían
+realizar ataques DoS desde cualquier máquina a la red.
 
 
 
@@ -227,213 +258,131 @@ permite que se puedan utilizar otros proyectos ya realizados.
 
 Estos nodos se encargan de hacer la transmisión multicast, con tal de hacer
 llegar los datos a los \umcc del grupo de destino.
+
 Asumiremos que estos nodos pertenecen a un slice administrativo en el cual no se
 realizan modificaciones o configuraciones maliciosas.
 
-Cómo todos los accesos a la red multicast se hacen a través de \umcc, se puede
+Como todos los accesos a la red multicast se hacen a través de \umcc, se puede
 fácilmente utilizar una implementación ya existente de una red overlay
-multicast en modo usuario, como es Araneola \cite{Araneola}.
+multicast en modo usuario
 
-%TODO(!!!): EXPLICAR ARANEAOLA SI ES LA UNICA SOLUCIO
-%TODO: Operaciones?
+En cuanto a las implementaciones, hemos encontrado varias \cite{Araneola, ESM,
+LMDD, LSAM}, pero consideramos que Araneola \cite{Araneola} se ajusta más a
+nuestras necesidades que las otras implementaciones por el hecho de haber sido
+diseñada para entornos dinámicos y con la fiabilidad en mente, además de ser un
+sistema de comunicación de M a N.
 
 
 
 \section{\dplc}
 
-% TODO: pertenece a un slice administrado correctamente (no habrá
-% modificaciones ni configuraciones maliciosas)
-
 Éste módulo, situado en cada una de las máquinas clientes (o receptoras de las
 aplicaciones de las que queremos hacer el despliegue), se sitúa en un
-slice propio (donde estarán todos los nodos con éste módulo), y al recibir los
-datos de \umcc accederá a sí mismo por ssh con tal de poner los ficheros al
-slice destino y seguidamente ejecutar el shell script asociado, en caso de
-estar presente.
+slice propio (donde estarán todos los nodos con éste módulo), que
+consideraremos administrado correctamente (por lo que no habrá configuraciones
+ni modificaciones maliciosas) y al recibir los datos de \umcc accederá a sí
+mismo por ssh con tal de poner los ficheros al slice destino y seguidamente
+ejecutar el shell script asociado, en caso de estar presente.
 
-Para realizar esta conexión por ssh, el nodo del slice dplc necesita los datos
+Para realizar esta conexión por ssh, el nodo del slice \dplc necesita los datos
 de clave y password ssh para que \dplc pueda hacer una conexión a la propia
 máquina y acceder a la máquina virtual asociada al slice de destino.
 
-Para ello, se utiliza el proceso de autentificación descrito en el apartado
-\ref{sect:security}.
+Para ello, se utiliza el proceso de registro descrito en el apartado
+\ref{sect:security}. Pero los datos de conexión también puede obtenerse de otro
+nodo \textit{peer} \dplc, como se detalla en el apartado
+\ref{sect:redeployment}.
 
 De modo que las operaciones que debe implementar este módulo son las
 siguientes:
 
-% TODO(?): seguridad?
 \begin{description}
-	% TODO: que es _la información_?
-	\item[\texttt{getInfoNodeSlice(slice\_name)}] :\\
-		Obtiene la información de los ficheros tipo \textit{unshared}
-		de la aplicación desplegada en el slice \textit{slice\_name} en
-		el mismo nodo que el propio \dplc.
+	\item[\texttt{deployToSlice (slice\_name, path\_to, file, type,
+		new\_version)}] :\\
+		Despliega el fichero \texttt{file} al path indicado a través de
+		la conexión SSH.
+		\\
+		El fichero puede ser \textit{shared} o \textit{unshared} según
+		indique \texttt{type}, guardando siempre una relación de qué
+		tipo es cada fichero.
+		\\
+		Ésta operación provoca un aumento del número de versión del
+		slice a \texttt{new\_version}.
 
-	% TODO: ELIMINAR: llama a la operación, no la ofrece
-	\item[\texttt{warnDpldNewNodeInSlice (slice\_name, node\_name)}] :\\
-		Avisa a los \dpld encargados del slice \textit{slice\_name} de
-		que se ha agregado un nuevo nodo \textit{node\_name} a dicho a
-		slice y que por lo tanto se le debería realizar el despliegue de
-		la aplicación.
+	\item[\texttt{getInfo (slice\_name, path)}] :\\
+		Obtiene la información de un objeto del sistema de ficheros
+		(necesario tanto para listar los contenidos de directorios, como
+		para que \dpld los revalide al re-registrarse).
 
-	\item[\texttt{deployAppToSlice (slice\_name, ...)}] :\\
-		Realiza la conexión por ssh al slice destino, despliega la
-		aplicación y ejecuta el script de inicialización.
+	\item[\texttt{getFile (slice\_name, path)}] :\\
+		Hace una petición de un objeto del sistema de ficheros
+		del slice \texttt{slice\_name}.
+	
+	\item[\texttt{deleteFile (slice\_name, path, new\_version)}] :\\
+		Hace la petición de eliminación de un objeto del sistema de
+		ficheros (\texttt{path}) de todo el slice \texttt{slice\_name}.
+		\\
+		Ésta operación provoca un aumento del número de versión del
+		slice a \texttt{new\_version}.
 
-	\item[\texttt{registerToDplc (node\_name, slice\_name)}] :\\
-		Un nodo se registra en \dplc como integrante del slice
-		slice\_name al que se va realizar despliegue de
-		aplicaciones.
+	\item[\texttt{getVersion (slice\_name)}] :\\
+		Devuelve la versión que el nodo tiene del slice
+		\texttt{slice\_name}.
 
-	% TODO: para que? se para sola... hace falta ofrecer la opción de
-	% pararla?
-	\item[\texttt{stopAppInSlice (slice\_name)}] :
-		El \dplc del nodo ejecutará script->stop en el slice
-		\textit{slice\_name} de dicho nodo. Es decir, detendrá la
-		aplicación desplegada en él.
+	\item[\texttt{getKey (slice\_name, $K_{pub_{d}}$)}] :\\
+		Informa de la clave pública remota y devuelve la propia clave
+		pública.
 
-	\item[\texttt{invalidateObj (slice\_name, name)}] :\\
-		% TODO(~): utilizar identificador de obj diferente del path?
-		% hace falta nombre del slice? (path completo) <<-- PATH COMPLET
+	\item[\texttt{getSSH (slice\_name)}] :\\
+		Devuelve la clave y password SSH del slice \texttt{slice\_name}.
+
+	\item[\texttt{ping (slice\_name, node\_name, version)}] :\\
+		Informa de la versión de despliegue que
+		\texttt{node\_name} tiene del slice \texttt{slice\_name}
+		desplegada.
+		\\
+		Como consecuencia, el nodo receptor realiza un \texttt{ping} al
+		nodo emisor.
+
+	\item[\texttt{needDeploy (slice\_name, node\_name, path)}] :\\
+		Informa de la necesidad de \texttt{node\_name} de recibir un
+		deploy de \texttt{path} del slice \texttt{slice\_name}.
+
+	\item[\texttt{registerWithResponse (slice\_name, node\_name, $K_{SSH}$,
+		$P_{SSH}$, $K_{pub}$)}] :\\
+		Permite a \texttt{node\_name} registrarse en \dplc como
+		integrante del slice y devuelve un resultado para informar si
+		se ha podido realizar la conexión SSH.
+
+	\item[\texttt{register (slice\_name, node\_name, $K_{SSH}$, $P_{SSH}$,
+		$K_{pub}$)}] :\\
+		Permite a \texttt{node\_name} registrarse en \dplc como
+		integrante del slice.
+
+	\item[\texttt{joined (slice\_name)}] :\\
+		Informa de la adición del nodo al grupo multicast del slice
+		\texttt{slice\_name}.
+
+	\item[\texttt{deleted (slice\_name)}] :\\
+		Informa de la eliminación del nodo al grupo multicast del slice
+		\texttt{slice\_name}.
+
+	\item[\texttt{invalidate (slice\_name, path)}] :\\
 		Invalida un objeto del sistema de ficheros (un fichero o un
-		directorio)
-
-	% TODO(?): validaciones? temporalidad?
+		directorio).
+		\\
+		Si el fichero estaba en la lista, que \dplc mantiene,
+		como \textit{shared}, ejecuta un \texttt{script->stop}.
 \end{description}
 
-% TODO(~): señalar los triggers de join / delete de los grupos
+Como consecuencia de las operaciones de registro, \dplc intenta abrir la
+conexión SSH con los datos obtenidos (si no estaba abierta), o los verifica (si
+ya estaba abierta), iniciando o reseteando el contador de \textit{timeout} del
+registro y arrancando una instancia de \famon para ése slice si no estaba ya en
+marcha.
 
-% TODO:
-%Cuando se añade un nodo a un slice en el que se realiza despliegue, se
-%tiene que informar al módulo \dpld, puesto que es posible que ya se hubiera
-%realizado un desplagamiento previo a dicho slice y \dpld tenga que realizar un
-%deployment al nodo en concreto.
-%
-%Para ello hemos pensado en un protocolo de "warnings" en el que \dplc realizara
-%comunicaciones multicast hacia los nodos \dpld, comunicándoles:
-%	- nodo
-%	- slice
-%
-% ===>>> LA QUAL COSA ACABARIA AMB L'OPERACIO QUE HE AFEGIT addNodeToSlice de
-%	dpld
-%
-% Como diferenciar al entrar un nodo en un grupo de si ya esta al dia o no?
-% - no se hace nada (solo hay cambios si esta presente en un deploy expreso)
-% - tiene la ultima version de los ficheros (numeración + indicador de ultima
-%   version (*))
-% - los tiene igual que la mayoria (checksums + problema bizantino)
-% - los tiene igual que un repositorio (checksums + repositorio - bamboo? -)
-%
-% (*) Puede ser:
-% o el nunmero mas grande que den los miembros del grupo
-%   - deben responder todos
-%   - alguien puede engañarnos y dar un numero equivocado?
-%   -> dplc nos firma la version -> garantiza la validez (como el algodon,
-%     dplc nuca engaña)
-% o el numero que den la mayoria
-%   - deben responder todos
-%   - podemos tirar a una version anterior (pq la mayoria de ahora no estaban
-%     presentes en un deployment anterior y decidieron al connectar que la
-%     version era esta)
-% o lo que digan los dpld (mayoria o maximo)
-%   - debe haber dpld en marcha
-%   + #dpld < #dplc
-% o lo que diga un repositorio central
-%   - poca escalabilidad
-%   - punto unico de fallada
-%   + resultados fiables
-%
-% Al detectar un desfase de las versiones (nodo corrupto?), que hacer:
-% - protocolo de las transparencias
-% - parar y esperar al siguiente deployment
-%
-% ---------------------------------------------------------------
-% => Posible estrategia de sincronizacion por numero de version:
-% ---------------------------------------------------------------
-%
-% => Precondicion: queremos que todos los nodos tengan el mismo shared
-%     siempre!
-%
-% => Formato de version:
-% - numeracion consecutiva
-% - numeracion consecutiva con separadores (.), siendo el override del usuario
-%   el que permite avanzar a una version superior no consecutiva 1.9 -> 2.0
-% - fecha en formato universal (estan los nodos de PL en hora?); como los
-%   deploys no son muy frecuentes, es bastante fiable aun con desfases de
-%   reloj
-%
-% => Como obtener nodos cualesquiera
-% hacer una peticion de la lista a PLC y seleccionar uno aleatoriamente
-%
-% => Pasos
-% - cada nodo en su slice guarda un fichero con el numero de version que se le
-%   ha desplegado (si no existe, se supono que no hay despliegue previo)
-%   (posibilidad de ver un fichero en unshared?)
-%   (posibilidad de ver un fichero en shared con el valor maximo actual?)
-%
-% - dpld obtiene el numero de version que actualmente hay en la red
-%   (no necesario si es version por fecha)
-%   * cuando:
-%     - al hacer el deploy, pregunta
-%     - en alguna operacion anterior ya lo va haciendo en background por si a
-%       caso
-%     - al hacer el registro unicast, el resultado es la version actual
-%   * como:
-%     - repositorio central (a modo transaccional, solo se actualiza el valor
-%       si se hace el deploy de como minimo N nodos - 1? quizas mas si
-%       utilizamos tecnicas de fallo bizantino? -)
-%     - se guarda el valor en la maquina dpld (demasiado rigido, no podemos
-%       hacer deploy desde diferentes sitios)
-%     - se le hace poner un valor en un fichero al usuario (esta bien como
-%       posibilidad para forzar el valor, pero no como obligacion)
-%     - el valor que nos den de una sola consulta (podria estar desfasado)
-%     - el valor maximo de N preguntas
-%       * si el valor se guarda en el slice, podria estar falseado? a quien le
-%         interesa si es su propio slice?
-%       * si el valor se guarda en dplc, seguro que siempre es el ultimo que
-%         dplc ha visto, no?
-%     - el valor mas ``votado'', por si hubiera alguno falseado (lo habria?)
-%
-% - hace el deploy indicando el nuevo numero de version
-%
-% - existe la posibilidad de que los dplc hagan piggybacking indicando su
-%   version actual, para que dpld:
-%   * se ponga al dia (hay algun problema en coger la mayor aunque solo la
-%     tenga uno? -> pero que no sea de un corrupto!)
-%   * dpld le indique que necesita actualizacion y
-%     - le haga un deploy unicast
-%     - le indique un vecino cercano con la version ``buena''
-%
-% - al arrancar o recuperar la conexion un dplc, obtiene el numero ``bueno''
-%   de version tal como lo hace dpld
-%
-% - si esta desactualizado, obtiene la nueva version de un peer no corrupto
-%
-% - cada dplc guarda los ultimos N nodos (incluyendo dpld) que le han
-%   preguntado su version, si se le cambia la version, lo notifica a estos
-%
-% - cuando llega una notificacion de cambio de version, se hace un redeploy
-%   desde ese peer originador del mensaje
-%   [ deploy virico para los que se han quedado rezagados ]
-%
-% - existencia de un fichero en /plfs/slices/<slice> que al hacerle un cat
-%   intenta contactar todos los nodos y mostrar su estado
-%
-% => interesante la deteccion de que nodos estan en la misma subred (fichero
-%    de conf de dplc con las redes locales?)
-%    al entrar en funcionamiento, lo pueden hacer en grupo (corte de luz o
-%    reconexion a inet - gracias al RFC TRACK multicast, se da aviso de
-%    eliminacion del grupo multicast, verdad? -)
-%
-% => las caidas son aleatorias, por lo que afectan a nodo separados (bloqueos
-%    de la maquina) o a una institucion o parte de ella (red local)
-%    => no hace falta un redeploy multicast (no habra tantos a la vez como
-%       para hacerlo preferible y viable)
-%    => designar un cabeza de grupo que lo pide a un peer exterior y luego
-%       hace un deploy unicast a
-%       - la direccion multicast del grupo institucional
-%       - cada peer local (si no se puede por multicast... se dara el
-%         caso?)
+Cuando ``salta'' el \textit{timeout}, si no quedan más registros para ése
+slice, se apaga \famon y se cierra la conexión SSH.
 
 
 
@@ -443,25 +392,23 @@ siguientes:
 monitorizar los ficheros que han sido desplegados en un nodo de un slice.
 
 Para ello debe haber una instancia corriendo en cada máquina virtual que
-corresponda a un slice que funciona a traves de \plfs.
+corresponda a un slice que funciona a traves de \plfs, siendo arrancado por el
+correspondiente \dplc en el momento en que hay algún \dpld registrado.
 
-% TODO: quien/cuando se arranca?
-% TODO: que se vilgila?
-% - ficheros desplegados expresamente
-% - ficheros resultado de (genereados despues de) desplegar y/o arrancar la aplicacion
-%   (como se detecta que crea la aplicacion y que lo hace el usuario u otro proceso que no es
-%   la aplicacion desplegada?)
-%   (si se detecta, como diferenciar shared/unshared?)
-%
-% Yo solo vigilaria lo desplegado expresamente.
+Las operaciones que nos interesan son las siguientes:
 
-% TODO (no va aqui)
-% script->deploy : depliega la aplicacion y guarda una lista de ficheros extra generados en la posible descompresion
-%    (mejor script->install)
-% script->remove : elimina los ficheros instalados, para poder instalar otra vez (posible nueva version)
-% script->update?
+\begin{description}
+	\item[\texttt{watch (path)}] :\\
+		Activa la monitorización sobre \texttt{path}
 
-% Las operaciones que debe ofrecer \famon son las siguientes:
-% TODO: operaciones de viliar / dejar paths concretos?
+	\item[\texttt{unwatch (path)}] :\\
+		Desactiva la monitorización sobre \texttt{path}
 
-% TODO: buscar un buen programa que lo haga => famd, gamin?
+	\item[\texttt{stop ()}] :\\
+		Detiene \famon
+\end{description}
+
+Hemos encontrado diversas implementaciones \cite{FAM, Gamin}, y de ellas hemos
+preferido \textit{Gamin} \cite{Gamin}, por implementar un subconjunto más
+sencillo de las operaciones que define el modelo de \textit{FAM} definido por
+\textit{SGI} y siendo un programa que consume así menos recursos.

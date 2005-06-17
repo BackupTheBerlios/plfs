@@ -7,6 +7,7 @@ que debe implementar.}}
 
 
 \section{Componentes}
+\label{sect:components}
 
 En este apartado mostraremos un esquema inicial de los principales
 componentes que necesitaría el sistema presentado (figura
@@ -65,6 +66,7 @@ componentes que necesitaría el sistema presentado (figura
 
 
 \section{Esquema de \plfs (PlanetLab File System)}
+\label{sect:plfsschema}
 
 Antes de comentar el esquema del árbol de ficheros y directorios de \plfs, es
 necesario dejar bien claro que hemos diseñado el sistema con la idea de
@@ -89,6 +91,8 @@ sistema dependerá del tipo de ficheros que estemos tratando.
 Dicho lo cual, pasamos a presentar el esquema del árbol de directorios y
 ficheros como se puede apreciar en la figura:
 
+\newpage
+
 \begin{code}
 	/plfs
 	|-publickey
@@ -98,9 +102,11 @@ ficheros como se puede apreciar en la figura:
 	|   |-backup
 	|   |-key
 	|   |-passwd
+	|   |-status
 	|   |-script
 	|   |-nodes
 	|   | `-<node>
+	|   |   |-version
 	|   |   `-unshared
 	|   `-shared
 	`-nodes
@@ -136,8 +142,12 @@ A continuación una explicación de los diferentes ficheros y directorios:
 		Este fichero contiene el password asociado a la clave privada
 		del slice.
 
+	\item[\texttt{/plfs/slices/\textless{}slice\textgreater/status}] :\\
+		Este fichero permite conocer el estado de despliegue de los
+		nodos del slice.
+
 	\item[\texttt{/plfs/slices/\textless{}slice\textgreater/script}] :\\
-		Éste fichero es un shell script que se ejecutará en cada máquina
+		Este fichero es un shell script que se ejecutará en cada máquina
 		una vez hecho el despliegue.
 		\\
 		El script tiene un sólo parámetro que puede ser:
@@ -153,8 +163,18 @@ A continuación una explicación de los diferentes ficheros y directorios:
 
 			\item [deploy:] lleva a cabo las operaciones necesarias
 				para preparar el arranque del servicio
+				(instalación de la aplicación y logueo de los
+				ficheros generados durante ésta)
+
+			\item [clean:] elimina los ficheros que ha desplegado
+				el \texttt{script$\rightarrow$deploy}
 		\end{description}
 
+	\item[\texttt{/plfs/slices/\textless{}slice\textgreater/nodes/\textless{}
+		node\textgreater/version}] :\\
+		Este fichero contiene el número de version del último
+		despliegue (ver apartado \ref{sect:versioning}).
+		
 	\item[\texttt{/plfs/slices/\textless{}slice\textgreater/nodes/\textless{}
 		node\textgreater/unshared}] :\\
 		Éste directorio es propio de cada nodo en el contexto del slice
@@ -179,6 +199,7 @@ funcionamiento de un nodo concreto.
 
 
 \section{Operaciones de \plfs}
+\label{sect:plfsoperations}
 
 Las posibles operaciones que \plfs permite, y por ende, que \kplfs implemente
 y puede llegar a comunicar a \uplfs, son las propias de un sistema de
@@ -301,6 +322,7 @@ la línea de comandos):
 
 
 \section{Descubrimiento de entidades del sistema}
+\label{sect:discovery}
 
 El sistema, además de las funcionalidades propias de despliegue de
 aplicaciones, debe poder realizar las siguientes operaciones para poder saber
@@ -357,17 +379,6 @@ componentes para mejorar su claridad.
 \section{Lógica de Despliegue}
 \label{sect:deployment}
 
-% TODO: HAY QUE AVISAR DE CUALES SE HA PODIDO DESPLEGAR Y CUALES NO
-%
-% que hacer con los que se han quedado a medias/han fallado?
-%
-% estaria bien un fichero de estado? Lista de nodos registrados en PLC en el
-% slice, con:
-% - ultima operacion realizada
-% - ultima operacion fallida
-% - ultima operacion en proceso
-% - nodo no accesible (no responde)
-
 Después de pensar diferentes posibilidades sobre como el usuario podría llevar
 a cabo realmente el despliegue mediante el sistema de ficheros, hemos llegado
 a la conclusión de que el usuario deberá realizar los siguientes pasos:
@@ -377,15 +388,16 @@ a la conclusión de que el usuario deberá realizar los siguientes pasos:
 		desea desplegar, y estos son transmitidos mediante el proceso de
 		despliegue que a continuación comentamos.
 
-	\item A continuación el usuario realiza \texttt{mv/cp} del script de
-		arranque de despliegue, que también es desplegado mediante el
+	\item A continuación el usuario realiza \texttt{mv/cp/touch} del script
+		de arranque de despliegue, que también es desplegado mediante el
 		mismo proceso hacia los nodos destino.
 \end{enumerate}
 
 Además, y como es obvio dada la naturaleza del propio sistema de ficheros, se
-deberá cumplir la siguiente precondición antes de poder realizar el despliegue:
+deberá cumplir la siguiente precondición antes de poder realizar el
+despliegue:\\
 
-\textit{Precondición}: El slice destino está ya creado (ej: \texttt{mkdir}).
+\textit{Precondición}: El slice destino está ya creado (ej: \texttt{mkdir}).\\
 
 Una vez aclarado lo anterior, pasamos a describir como se realizaría de forma
 general el despliegue de los ficheros a través de los diferentes componentes
@@ -405,7 +417,8 @@ del sistema:
 
 	\item \dpld $\rightarrow$ \umcc \\
 		Se comunica el slice destino, se dan los ficheros a desplegar y
-		el shell script con los comandos a ejecutar una vez desplegados.
+		el shell script con los comandos a ejecutar una vez
+		desplegados, indicando la versión que se está desplegando.
 
 	\item \umcc $\rightarrow$ red \umcr \\
 		Se inyectan los paquetes a enviar con destino a un grupo en la
@@ -432,21 +445,31 @@ del sistema:
 
 	\item \dplc $\rightarrow$ slice destino (ssh) \\
 		Se despliega la aplicación (se copian los ficheros), y una vez
-		hecho esto, se ejecuta el shell script adjuntado, en caso de
-		estar presente. Para ello, primero ejecuta el \textbf{deploy} y
-		luego el \textbf{start}.
-		% TODO: diferenciar primeros de ultimo fichero
-		% ahora el ultimo debe ser el script y se hara el deploy+start
+		hecho esto, se ejecuta el shell script (que es el último
+		fichero en llegar). Para ello, primero se desinstala la
+		anterior aplicación (\texttt{script$\rightarrow$clean}), se
+		copian los nuevos ficheros, y luego se despliega la aplicación
+		(\texttt{script$\rightarrow$deploy}) y se pone en marcha
+		(\texttt{script$\rightarrow$start}).
 \end{enumerate}
 
-% TODO: NOTA:
-% En caso de haber un fallo en cualquiera de los dos pasos anteriores,
-% se devuelve un error al dpld origen (a modo de NACK) ??????
-% Si todo es correcto anunciar al dpld??? Escalabilidad? ACK's
+Como se ve en el apartado \ref{sect:redeployment}, no es necesario controlar
+los casos en que algun despliegue no se lleve a cabo en algún nodo, ya que
+entre ellos mismos se encargarán de mantener la coherencia del despliegue.
+
+El fichero \texttt{/plfs/slices/\textless{}slice\textgreater/status} contiene,
+para cada nodo del slice, si se ha podido contactar con él y, en caso
+afirmativo, en qué estado de despligue se encuentra el nodo.
+
+Esta información se deriva a través del contenido del acceso a los ficheros
+\texttt{/plfs/slices/\textless{}slice\textgreater/nodes/\textless{}
+node\textgreater/version}, dejando comprobar en qué estado se encuentra el
+despliegue al comparar la versión de los nodos con la actual.
 
 
 
 \section{Comunicación Multicast}
+\label{sect:multicast}
 
 Como hemos comentado, el despliegue de los ficheros se hace sobre una red
 multicast, por lo que hace falta describir algunas de sus características que
@@ -499,54 +522,136 @@ posibilidades:
 		correspondientes según el TRACK total obtenido.
 \end{description}
 
-Creemos que TRACK es más completo y nos permitiría realizar más operaciones a
-nivel de despliegue. Por ejemplo, en caso de recibir un TRACK donde se informa
-de que han fallado algunos paquetes, el cliente de multicast \umcc informaría a
-\dpld el cual se encargaría de reenviar los datos.
+Creemos que TRACK es más completo y permitiría realizar extensiones al sistema,
+como por ejemplo a modo de monitorización o posibilidad de extender el modelo
+de despliegue a, por ejemplo, exigir un mínimo de N nodos.
+
+
+
+\section{Versionamiento de despliegues}
+\label{sect:versioning}
+
+Como los nodos de los slices pueden recibir varios despliegues en el tiempo y de
+manera secuencial, y queremos tener los nodos de un mismo slice sincronizados
+al último despliegue realizado, necesitamos una manera de controlar las
+versiones que nos permita detectar las situaciones que comentamos en el
+apartado \ref{sect:redeployment}.
+
+Como presuponemos que los despliegues son relativamente poco frecuentes, y no
+soportamos la posibilidad de realizar despliegues simultáneos (en parte por que
+no tienen sentido por la naturaleza del problema), consideramos que la fecha y
+la hora en un formato común entre todos los nodos (ej:UTC o GMT), son
+identificadores suficientes de la versión de un despliegue, presuponiendo que
+los nodos de PlanetLab están sincronizados a esta hora con unos límites de
+error aceptables.
+
+Este número de versión es accesible a través del fichero
+\texttt{/plfs/slices/\textless{}slice\textgreater/nodes/\textless{}
+node\textgreater/version}.
+
+Cabe destacar un tipo de versión especial que llamaremos ``versión corrupta''
+que será considerada como la más vieja de todas las versiones.
 
 
 
 \section{Redespliegue}
 \label{sect:redeployment}
 
-El componente \famon se encarga de la monitorización de los ficheros etiquetados
-como \texttt{shared}. De este modo, cuando se produce una modificación
-incontrolada de estos ficheros, este componente avisa al \dplc para que a su
-vez lo notifique a los nodos \dpld responsables de ese fichero, es decir,
-aquellos que estén suscritos como oyentes de ese grupo multicast, o slice, del
-cual son los responsables de los despliegues que se realicen en él, y por
-lo tanto deben encargarse de invalidar los ficheros afectados del sistema de
-ficheros \plfs.
+Existen dos casos en los que es necesario un redespliegue:
 
-Entenderemos por modificación incontrolada, aquella que no provenga de uno de
-estos nodos responsables (nodos con \dpld).
+\begin{description}
+	\item[Caída de nodos] : \\
+		Los nodos en PlanetLab "caen" de forma aleatoria, o bien un nodo
+		concreto (cuelgue de la máquina, reinicio, pérdida
+		de conectividad, etc.) o por grupos institucionales
+		(fallo eléctrico de una zona, caída del acceso a la red, etc.).
+		Estas situaciones se detectan en caso de rearrancar \dplc (por
+		una caída de la máquina) o bien cuando el nodo queda reconectado
+		a la red multicast (después de haber sido expulsado por
+		falta de respuesta). \\
+		Será necesario realizar un redespliegue, si al volver al
+		grupo, el nodo detecta que hay una versión más nueva de
+		despliegue.
+	
+	\item[Modificación de ficheros] : \\
+		Cuando se produce una modificación incontrolada (que no viene 
+		de uno de los \dpld registrados) de los ficheros de un nodo al
+		que se le ha realizado un despliegue, y estos son de tipo
+		\textit{shared}, \famon se encarga de detectarlo y avisar a
+		\dplc, que se encargará de avisar a los \dpld
+		registrados para que hagan una invalidación de
+		dichos ficheros.
+		\\
+		En este caso es necesario además marcar la versión como
+		``versión corrupta'' (nunca será rearrancada una
+		aplicación marcada de esta manera).
+\end{description}
 
-Cuando \famon avisa al \dplc de ese nodo, éste procederá a redesplegar el
-fichero siguiendo los pasos a continuación:
+Cuando se detectan uno de estos dos casos, antes de nada, se detiene la
+aplicación mediante el script de despliegue (script$\rightarrow$stop) y
+posteriormente se realiza el proceso de redespliegue.
+
+Para realizar el redespliegue es necesario que los \dplc mantengan una lista de
+\textit{peers} para cada slice al que pertenece. Cada lista contiene N
+nodos con el último número de versión conocido para cada uno de ellos (a modo de
+\textit{vector clock}).
+
+Para obtener esta lista, cuando \dplc arranca obtiene las direcciones de N nodos
+cualesquiera mediante \pldb y a continuación les pregunta a cada uno de ellos
+su número de versión dando a cambio el suyo propio.
+
+En caso de que un nodo no responda se sustituye por otro que no
+esté en la lista de forma aleatoria. Análogamente, en el caso de que esté en la
+lista pero posteriormente se pierda la conexión con él (ej: detección por pings
+periódicamente con períodos largos para no saturar la red), también será
+sustituido.
+
+En el caso de que sea el propio nodo el que haya perdido la conexión, \dplc
+quedará suspendido hasta reactivar la conexión, momento en el que intentará
+revalidar las entradas de su tabla de \textit{peers}.
+
+El proceso de redespliegue (cuando sea necesario tal como hemos comentado
+antes) se realizará mediante los siguientes pasos:
 
 \begin{enumerate}
-	\item \dplc realiza un script->stop deteniendo momentáneamente la
-		aplicación en ese nodo corrupto.
+	\item En caso de no tener los datos de ssh, \dplc se los pedirá a algún
+		nodo de la lista para poder abrir las conexiones.
 
-	\item se despliega el fichero desde un nodo del mismo slice (un nodo
-		hermano hablando desde el punto de vista de árboles de
-		directorios) que no sea corrupto.
+	\item Una vez abiertas las conexiones, se pide un despliegue unicast a
+		uno de los \textit{peers} de la lista.
 
-	\item \dplc realiza un script->start para reiniciar la aplicación.
+	\item Se procede al despliegue de los ficheros actualizando así la
+		versión.
 \end{enumerate}
 
 Obviamente surge un posible problema como consecuencia de este diseño, y es que
-podría suceder que por circunstancias no existiera ningún otro nodo no corrupto
+podría suceder que por circunstancias no existiera ningún nodo con una versión
 (o bien porque todos los hermanos lo están, o bien porque es el único nodo
 activo del slice).
 
 De modo que la solución que proponemos es la de mantener en un repositorio
-central los ficheros originales desplegados como \texttt{shared}.
+central los ficheros originales desplegados como \texttt{shared}, de modo que
+si \dplc no puede contactar con ningún nodo no corrupto pueda descargar estos
+ficheros.
+
 La URI de este repositorio es la que se indica en el fichero \texttt{backup}
 que hemos presentado en el esquema de \plfs.
 
-Finalmente, si la recuperación mediante este repositorio no pudiera llevarse a
-cabo, se invalidaría el nodo del slice, y quedaría como corrupto.
+Para evitar un colapso de la red los cambios de versión no se informan de
+immediato al producirse dicho cambio (excepto del cambio de versión a ``versión
+corrupta'' que produce un aviso instantáneo), sino que se utilza un mecanismo
+de coherencia relajada a través de los mensajes que se envían los
+\textit{peers} para actualizar sus listas de versiones, aprovechando la
+entropía que propicia el hecho de que cada uno envía dichos mensajes en tiempos
+muy probablemente diferentes (porque han empezado en un instante distinto).
+
+Como mejora, sería interesante detectar qué nodos están en una misma subred, es
+decir, que forman parte de una misma institución y comparten una red mucho más
+rápida que Internet (ya sea por configuración manual o por detección a través
+de las interfícies configuradas), para así delegar un posible proceso de
+\textit{redeployment} de todo el grupo a un solo nodo, que luego haria el mismo
+\textit{redeployment} al resto de nodos del grupo (hasta pudiendo así
+aprovecharse de las capacidades de multicast del nivel de enlace).
 
 
 
@@ -576,12 +681,12 @@ $K_{priv_{d}}$ (puesto que los \dplc conocen $K_{pub_{d}}$).
 Los pasos a seguir son:
 
 \begin{enumerate}
-	\item Se consulta con PlanetLab Central y se escoge un nodo cualquiera
+	\item Se consulta con \pldb y se escoge un nodo cualquiera 
 		del slice con el que nos queremos comunicar.
 		\label{step:auth_get_node}
 
 	\item Se pide la clave pública del nodo seleccionado, $K_{pub_{c}}$, y
-		se le da la pública del cliente, $K_{pub_{d}}$.\\
+		se le da la pública del \dpld, $K_{pub_{d}}$.\\
 		Si el nodo no responde, se vuleve al paso
 		\ref{step:auth_get_node}).
 
@@ -598,7 +703,6 @@ Los pasos a seguir son:
 		$K_{pub_{d}}$.
 \end{enumerate}
 
-%TODO: como avisa un nodo a un cliente que este no esta autentificado?
 Hay varios casos en los que una operación realizada por un \dpld no podría ser
 llevada a cabo en un \dplc:
 
@@ -615,25 +719,29 @@ llevada a cabo en un \dplc:
 \end{itemize}
 
 La solución que hemos pensado para estos tres casos anteriores, es la de
-realizar nuevos registros. En el primer caso, \dplc avisaría mediante un
-\textit{warning} (ver apartado \ref{sect:warnings}), y \dpld realizaría un
+realizar nuevos registros. En el primer caso, \dplc avisaría mediante una
+operación (ver apartado \ref{sect:dplc}), y \dpld realizaría un
 registro unicast en ese nodo. En los otros casos \dpld realizaría de
 nuevo el registro multicast cada cierto tiempo (política de revalidación).
+
 Cabe notar que las conexiones que \dpld mantiene con los slices tienen un
-\textit{timeout} asociado, de modo que una vez expirado se perderán los datos
-de dichas conexiones y si posteriormente se quisiera realizar una operación en
-alguno de esos slices se deberá reiniciar de cero el proceso de registro.
+\textit{timeout} asociado, de modo que una vez expirado se perderán dichas
+conexiones y si posteriormente se quisiera realizar una operación en
+alguno de esos slices se deberá reiniciar de cero el proceso de registro
+(momento en el que se intentará revalidar los fiheros que tubiera cacheados el
+\dpld).
+
+Ahora bien, \dplc no pierde los datos de conexión (clave y password ssh),
+puesto que como se explica en el apartado \ref{sect:redeployment}, éstos son
+necesarios para mantener la coherencia del slice.
 
 En el caso en que se hayan cambiado la clave y/o el password ssh y que la
-conexión ssh esté cerrada, el \dpld recibiría algunos \textit{warnings}
-procedentes de los \dplc destinatarios con la conexión ssh cerrada (que serán
-una minoría debido a la política de revalidación de registros comentada
-anteriormente).
+conexión ssh esté cerrada, el \dpld recibiría algunas operaciones de aviso (ver
+apartado \ref{sect:dpld}) procedentes de los \dplc destinatarios con la conexión
+ssh cerrada (que serán una minoría debido a la política de revalidación de
+registros comentada anteriormente).
 
 Como los datos desplegados por \dpld van firmados para evitar problemas de
 suplantación de identidad, en el caso de que \dpld modifique su par de claves
 deberá propagar la clave pública mediante un registro multicast a los slices
 con los que tuviera una relación abierta.
-
-% TODO(?): 'ls' => renew => cheksums??
-% => invalidar els fitxers cada X temps

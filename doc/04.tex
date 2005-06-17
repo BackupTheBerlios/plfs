@@ -7,16 +7,33 @@ comunicación entre componentes del sistema. Como veremos, nos centraremos en
 los tipos de mensajes en cada tipo de comunicación y la seguridad que debemos
 implementar en cada una, para asegurar autenticidad y confidencialidad.}}
 
+Las comunicaciones entre componentes de un mismo nodo funcionan a modo de
+llamadas ``normales'' entre partes de un mismo programa (aunque se carguen en
+forma de \textit{plugins}).
+
+La comunicación entre componentes de nodos separados se realiza siempre mediante
+el paso de mensajes que siguen éste formato:
+
+\begin{enumerate}
+	\item IDoperación
+
+	\item Remitente
+
+	\item Datos de la operación (parámetros o resultado)
+\end{enumerate}
+
+Seguidamente pasamos a concretar los detalles de comunicación de los diferentes
+componentes.
 
 
-\section{\kplfs $\rightarrow$ \uplfs}
+
+\section{\kplfs $\longleftrightarrow$ \uplfs}
 
 Para que la aplicación en modo usuario pueda enterarse de las operaciones
 que se realizan sobre el sistema de ficheros, el módulo \kplfs a nivel de
 kernel, debe comunicarse con el módulo \uplfs a nivel usuario.
 Para realizar esta comunicación de eventos, hay varias posibilidades:
 
-% TODO(~): hay mas posibilidades?
 \begin{description}
 	\item [Dispositivo:]
 		Aprovecha las propias características de un dispositivo de sistema,
@@ -33,178 +50,59 @@ Para realizar esta comunicación de eventos, hay varias posibilidades:
 Así pues, por las ventajas de operaciones no bloqueantes que ofrece,
 utilizaremos un \textbf{dispositivo} para comunicar ambos componentes.
 
-
-\subsection{Tipos de mensajes}
-
-% TODO: hace falta esta explicación? ya esta hecha antes...
 Cuando se realice una operación (\texttt{ls},\texttt{mv}, etc) en el sistema
 de ficheros \plfs, el módulo de kernel \kplfs que implementa estas operaciones,
 deberá informar dichos eventos al módulo a nivel usuario \uplfs (el cual deberá
-realizar las operaciones pertinentes).
-Para ello, hemos pensado que el módulo \kplfs realizaría la comunicación de
-estos eventos a \uplfs mediante paso de mensajes, que deberán tener el
-siguiente formato:
+realizar las operaciones pertinentes, comunicándose con los diferentes
+componentes disponibles).
 
-% TODO: aclararlo con las operaciones de 02.tex/03.tex
-	Campo1: Operación ("ls", "mv", ...)
-	Campo2: Parametros (fichero, directorio...)
-
-
-
-\section{\uplfs $\rightarrow$ \pldb}
-%TODO: REVISAR :PPPP
-Cuando el usuario quiere mirar el contenido del directorio de slices o de
-nodos de un slice, y \kplfs remite dicha operación a \uplfs, este realiza la
-consulta de dicha información llamando a las operaciones que ofrece \pldb, por
-ejemplo mediante llamadas a procedimiento remoto (como podría ser Java RMI).
-
-Una vez obtenida la información, \uplfs procedería a pasársela a \kplfs el cual
-actualizaría los inodos de \plfs y mostraría el resultado al usuario.
+En éste caso, aunque los componentes estén en el mismo nodo, deben enviarse
+mensajes a través del dispositivo de control, mensajes que tienen el mismo
+formato que se ha comentado al inicio del capítulo, pero sin el parámetro de
+\texttt{Remitente}.
 
 
 
-\section{\uplfs $\rightarrow$ \dpld}
+\section{\uplfs/\dpld $\rightarrow$ \pldb}
 
-% TODO: forma de comunicación
-% TODO: formato de los mensajes
-
+Llamada interna de funciones.
 
 
-\section{\dpld $\rightarrow$ \pldb}
 
-%TODO(~) Análogamente a \uplfs -> \pldb
+\section{\uplfs $\longleftrightarrow$ \dpld}
+
+Llamada interna de funciones.
 
 
 
 \section{\dpld $\rightarrow$ \dplc}
-% TODO: problema de comunicación directa: puertos de destino?
-% no es lo mismo dpld->dplc que dpld->ummc->dplc!
 
-En primer lugar antes de realizar ninguna operación de despliegue o consulta a
-slice destinos, debemos realizar el proceso de registro y
-autentificación siguiente:
+Todas las comunicaciones van cifradas con $K_{pub_{c}}$ (para asegurar que sólo
+los \dplc puedan leer los contenidos) y firmadas con $K_{priv_{d}}$ (para poder
+así comprovar su autenticidad).
 
-\begin{enumerate}
-	\item \dpld obtiene la clave pública del slice \dplc.
-
-	\item \dpld selecciona un nodo cualquiera del slice \dplc.
-
-	\item \dpld se registra en dicho nodo cifrando con la clave pública de
-		\dplc la clave y password de ssh, y además manda su propia clave
-		pública.
-
-	\item El nodo \dplc descifra la clave y password ssh e intenta la conexión
-		ssh al slice destino. En caso negativo se manda un mensaje de retorno
-		y se aborta el proceso de registro.
-
-		\begin{center}
-			\texttt{ssh \textless{}slice\_destino\textgreater{}@localhost -i
-			\textless{}clave\_privada\textgreater}
-		\end{center}
-
-	\item El nodo \dplc manda un mensaje a \dpld aceptando el registro. En el
-		caso que dicho mensaje de aceptación tarde un cierto tiempo
-		\textit{timeout} se repiten los pasos anteriores con otro nodo \dplc.
-
-	\item \dpld envía registro multicast al slice destino con el password y
-		clave ssh cifrados con la clave pública de \dplc y además envía la
-		clave pública de \dpld.
-
-	\item Todos los nodos \dplc a los que llega el mensaje, realizan la
-		conexión ssh y almacenan la asociación \textless slice destino - \dpld
-		origen - clave pública del \dpld \textgreater para futuras
-		comunicaciones.
-\end{enumerate}
-
-Una vez realizado el proceso de registro, cualquier operación (despliegue,
-consulta, etc) se realizará siguiendo los pasos siguientes:
-
-\begin{enumerate}
-	\item \dpld cifra los datos a enviar con la clave pública de \dplc.
-
-	\item \dpld crea una firma de los datos con su clave privada.
-
-	\item \dplc comprueba la firma y descifra los datos.
-
-	\item \dplc realiza la operación deseada.
-\end{enumerate}
-
-Si en algún momento se contacta con algún nodo \dplc reiniciado o nuevo con el
-que no se está registrado, se procede a realizar un registro unicast nuevo.
-
-
-\subsection{Tipos de mensajes}
-
-\begin{figure}[h]
-	\centering
-	\includegraphics[scale=0.5]{paq_-_uplfs-pldb.eps}
-	\caption{Paquete genérico \uplfs $\rightarrow$ \dplc}
-	\label{fig:paq_-_uplfs-pldb}
-\end{figure}
-
-
-\subsubsection{Datos}
-% TODO: En caso de que el paquete contenga el campo \texttt{Cmd}.....
-
-\begin{figure}[h]
-	\centering
-	\includegraphics[scale=0.5]{paq_-_uplfs-pldb_-_data.eps}
-	\caption{Paquete de datos \uplfs $\rightarrow$ \dplc}
-	\label{fig:paq_-_uplfs-pldb_-_data}
-\end{figure}
-
-% TODO: Datos => lista ficheros + ficheros?
-%       (kernel permite agrupación de ficheros en un envío?)
-% TODO: si ya se pre-acredita, no hace falta ahora enviar passwd+clave
-% TODO: otros tipos de paquete?
-
-\begin{description}
-	\item[Slice destino:] nombre del slice destino al que va destinado el
-		paquete
-
-	\item[Clave/Password privados ssh:] clave y password privados de ssh
-para
-		que	\dplc se comunique con el slice destino
-
-	\item[Datos:] datos a desplegar en el slice destino
-
-	\item[Shell script:] shell script a ejecutar una vez desplegados los
-		ficheros (optativo)
-\end{description}
-
-
-\subsubsection{Registro de oyente}
-
-% TODO Formate de paquete de registro
+Luego, en el destino, se comprueba la firma, se descifran los datos y se
+procede a realizar la operación.
 
 
 
 \section{\dplc $\rightarrow$ \dpld}
 \label{sect:warnings}
 
-Los nodos \dplc deben informar de los cambios en los grupos slice destino
-a los \dpld que están registrados en ellos para esos slice.
+Todas las comunicaciones van cifradas con $K_{pub_{d}}$ (para asegurar que sólo
+los \dplc puedan leer los contenidos) y firmadas con $K_{priv_{c}}$ (para poder
+así comprovar su autenticidad).
 
-Los cambios pueden ser:
-\begin{itemize}
-	\item Se añade un nuevo nodo al slice.
+Luego, en el destino, se comprueba la firma, se descifran los datos y se
+procede a realizar la operación.
 
-	\item Se quita un nodo del slice.
 
-	\item Modificación de ficheros (invalidación).
 
-	\item Se requiere autentificación.
-\end{itemize}
+\section{\dpld/\dplc $\rightarrow$ \umcc}
 
-Para anunciar estos cambios hemos diseñado un paquete de warning mediante el
-cual los nodos \dplc los anuncian a los \dpld registrados.
-
-%TODO figura paquete warning
-Campo 1: tipo de cambio.
-Campo 2: string (nodo o fichero).
-Campo 3: shared o unshared
-...
-
-Para autentificar los paquetes de warning se firman con la clave privada
-de \dplc.
-
+Cuando tanto \dpld como \dplc quieren comunicarse con un grupo (\dpld se
+comunica con el grupo de receptores del slice para mandarles operaciones y
+\dplc se comunica con el grupo de emisores para mandarles avisos), lo hacen a
+través de la red multicast, mediante el componente de entrada a ella que es
+\umcc, de forma que mandan los datos como si fueran directamente una de las dos
+comunicaciones anteriores y se transmiten transparentemente por la red \umc.
