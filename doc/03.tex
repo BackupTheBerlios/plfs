@@ -61,6 +61,7 @@ hace de intermediario hacia \kplfs, son las siguientes:
 
 
 \section{\dpld}
+\label{sect:dpld}
 
 Las operaciones que \dpld ofrece son las siguientes:
 
@@ -163,27 +164,27 @@ Las operaciones que ofrece son:
 \begin{description}
 	\item[\texttt{getSlices ()}] :\\
 		Permite obtener la lista de slices que se han dado de alta en
-		PlanetLab
+		PlanetLab.
 
 	\item[\texttt{getNodes ()}] :\\
 		Permite obtener la lista de nodos que se han dado de alta en
-		PlanetLab
+		PlanetLab.
 
 	\item[\texttt{getSliceNodes (slice\_name)}] :\\
-		Permite obtener la lista de los nodos que hay en un slice
+		Permite obtener la lista de los nodos que hay en un slice.
 
 	\item[\texttt{getSliceNodesAny (slice\_name, num)}] :\\
 		Permite obtener una lista de \texttt{num} nodos cualesquiera de
-		un slice
+		un slice.
 
 	\item[\texttt{getSliceNodesNumber (slice\_name)}] :\\
-		Permite obtener el numero de nodos que hay en un slice
+		Permite obtener el numero de nodos que hay en un slice.
 
 	\item[\texttt{getSliceNode (slice\_name, node\_name)}] :\\
-		Permite obtener información de un nodo de un slice
+		Permite obtener información de un nodo de un slice.
 
 	\item[\texttt{getSliceNodeAny (slice\_name)}] :\\
-		Permite obtener un nodo cualquiera de un slice
+		Permite obtener un nodo cualquiera de un slice.
 
 	\item[\texttt{getSliceNodeNearest (slice\_name)}] :\\
 		Permite obtener el nodo mas cercado de un slice
@@ -191,7 +192,7 @@ Las operaciones que ofrece son:
 		soporte para ``localidad'').
 
 	\item[\texttt{getNodeSlices (node\_name)}] :\\
-		Permite obtener la lista de los slices de un nodo
+		Permite obtener la lista de los slices de un nodo.
 \end{description}
 
 Para obtener toda esta información, hace falta utilizar la API que ofrece
@@ -277,7 +278,7 @@ realizan modificaciones o configuraciones maliciosas.
 
 Como todos los accesos a la red multicast se hacen a través de \umcc, se puede
 fácilmente utilizar una implementación ya existente de una red overlay
-multicast en modo usuario
+multicast en modo usuario.
 
 En cuanto a las implementaciones, hemos encontrado varias \cite{Araneola, ESM,
 LMDD, LSAM, nemo, nemo-res-p2p-mcast, stealth}, pero consideramos que Araneola
@@ -288,6 +289,7 @@ con la fiabilidad en mente, además de ser un sistema de comunicación de M a N.
 
 
 \section{\dplc}
+\label{sect:dplc}
 
 Éste módulo, situado en cada una de las máquinas clientes (o receptoras de las
 aplicaciones de las que queremos hacer el despliegue), se sitúa en un
@@ -412,13 +414,13 @@ Las operaciones que nos interesan son las siguientes:
 
 \begin{description}
 	\item[\texttt{watch (path)}] :\\
-		Activa la monitorización sobre \texttt{path}
+		Activa la monitorización sobre \texttt{path}.
 
 	\item[\texttt{unwatch (path)}] :\\
-		Desactiva la monitorización sobre \texttt{path}
+		Desactiva la monitorización sobre \texttt{path}.
 
 	\item[\texttt{stop ()}] :\\
-		Detiene \famon
+		Detiene \famon.
 \end{description}
 
 Hemos encontrado diversas implementaciones \cite{FAM, Gamin}, y de ellas hemos

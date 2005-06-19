@@ -121,12 +121,12 @@ A continuación una explicación de los diferentes ficheros y directorios:
 	\item[\texttt{/plfs/publickey}] :\\
 		Este fichero contiene la clave pública del \dpld para que
 		funcione todo el sistema de seguridad (ver apartado
-		\ref{sect:segurity}).
+		\ref{sect:security}).
 
 	\item[\texttt{/plfs/privatekey}] :\\
 		Este fichero contiene la clave privada del \dpld para que
 		funcione todo el sistema de seguridad (ver apartado
-		\ref{sect:segurity}).
+		\ref{sect:security}).
 
 	\item[\texttt{/plfs/slices/\textless{}slice\textgreater/backup}] :\\
 		Este fichero contiene una URI que indica el repositorio central
@@ -244,7 +244,7 @@ la línea de comandos):
 
 	\item [\textit{edición}] :\\
 		La edición de un fichero provocará el redespliegue del mismo
-		una vez sea cerrado (ver apartado \label{sect:redeployment}).
+		una vez sea cerrado (ver apartado \ref{sect:redeployment}).
 
 	\item [\textit{lectura}] :\\
 		La lectura de un fichero provocará su importación previa en
@@ -468,7 +468,7 @@ para cada nodo del slice, si se ha podido contactar con él y, en caso
 afirmativo, en qué estado de despliegue se encuentra el nodo.
 
 Esta información se deriva a través del contenido del acceso a los ficheros
-\texttt{/plfs/slices/\textless{}slice\textgreater/nodes/\textless{}
+\texttt{/plfs/slices/ \textless{}slice\textgreater/nodes/\textless{}
 node\textgreater/version}, dejando comprobar en qué estado se encuentra el
 despliegue al comparar la versión de los nodos con la actual.
 
