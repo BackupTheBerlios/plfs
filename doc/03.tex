@@ -1,7 +1,5 @@
 \chapter{Diseño de los componentes}
 
-%TODO: señalar qué módulos encriptan/desencriptan datos
-
 \textbf{\textit{En este capítulo definimos las principales funcionalidades que
 deben implementar cada uno de los componentes.}}
 
@@ -9,16 +7,21 @@ deben implementar cada uno de los componentes.}}
 
 \section{\kplfs}
 
-Este módulo implementa la interfaz del VFS, y las operaciones que permite las
-hemos descrito en el capítulo anterior en el apartado \ref{sect:plfsoperations}.
+Este módulo implementa la interfaz del VFS (\textit{Virtual File System}, ver
+\cite{libfs, lk, lk24i, lkapi, lkmpg, ovfs, tlk}) de Linux, y las operaciones
+que permite las hemos descrito en el capítulo anterior en el apartado
+\ref{sect:plfsoperations}, emulando el comportamiento de sistemas de ficheros
+como Intermezzo \cite{Intermezzo}, CODA o NFS, que tienen un controlador en el
+núcleo y otro en espacio de usuario.
 
-Las operaciones que ofrece, además de las del VFS, son:
+Las operaciones que ofrece, además de las del VFS (informar a \kplfs del
+resultado de las operaciones del VFS que se comunican a \plfs), son:
 
 \begin{description}
-	\item[\texttt{invalidate (slice\_name, type, path)}] :\\
+	\item[\texttt{invalidate (slice\_name, node\_name, type, path)}] :\\
 		Invalida el fichero determinado por \texttt{path} del slice
-		\texttt{slice\_name} del tipo \texttt{type} (\textit{shared} o
-		\textit{unshared}).
+		\texttt{slice\_name} del nodo \texttt{node\_name} del tipo
+		\texttt{type} (\textit{shared} o \textit{unshared}).
 \end{description}
 
 
@@ -39,12 +42,20 @@ Por ello, las operaciones que \uplfs ofrece, además de las del VFS para las que
 hace de intermediario hacia \kplfs, son las siguientes:
 
 \begin{description}
-	\item[\texttt{execute (component, operation, \ldots)}] :\\
+	\item[\texttt{execute (component, id, operation, \ldots)}] :\\
 		Llama a la función \texttt{operation} del componente
 		\texttt{component} con los parámetros extra que se indiquen (en caso
-		de indicar alguno).
+		de indicar alguno), siendo \texttt{id} el identificador de la
+		operación para su posible retorno (en Linux sirve perfectamente
+		el PID del proceso que inicia la petición, ya que en todo
+		momento habrá una sola petición por cada thread).
 		\\
 		Los posibles componentes actualmente son \dpld o \pldb.
+
+	\item[\texttt{invalidate (slice\_name, node\_name, type, path)}] :\\
+		Invalida el fichero determinado por \texttt{path} del slice
+		\texttt{slice\_name} del nodo \texttt{node\_name} del tipo
+		\texttt{type} (\textit{shared} o \textit{unshared}).
 \end{description}
 
 
@@ -54,8 +65,7 @@ hace de intermediario hacia \kplfs, son las siguientes:
 Las operaciones que \dpld ofrece son las siguientes:
 
 \begin{description}
-	\item[\texttt{deployToSlice (slice\_name, path\_from, path\_to)}]
-		:\\
+	\item[\texttt{deployToSlice (slice\_name, path\_from, path\_to)}] :\\
 		Realiza la comunicación con los componentes \dplc para desplegar
 		un fichero \textit{shared} (\texttt{path\_from}) al slice
 		\texttt{slice\_name} en \texttt{path\_to}.
@@ -120,12 +130,13 @@ Las operaciones que \dpld ofrece son las siguientes:
 		el nodo \texttt{node\_name}.
 
 	\item[\texttt{registerNeeded (slice\_name, node\_name)}] :\\
-		Petición de necesidad de registro.
-	
+		Petición de necesidad de registro. Si \texttt{node\_name} es
+		nulo, se hace un registro a todo el slice \texttt{slice\_name}.
+
 	\item[\texttt{addNodeToSlice (slice\_name, node\_name)}] :\\
 		Informa de la adición de un nodo a un slice.
 
-	\item[\texttt{removeNodeToSlice (slice\_name, node\_name)}] :\\
+	\item[\texttt{removeNodeFromSlice (slice\_name, node\_name)}] :\\
 		Informa de la eliminación de un nodo a un slice.
 
 	\item[\texttt{invalidate (slice\_name, node\_name, type, path)}] :\\
@@ -135,7 +146,7 @@ Las operaciones que \dpld ofrece son las siguientes:
 
 En todas las anteriores operaciones, excepto las cuatro últimas, se puede dar el
 caso de que el/los \dplc destinatarios de las operaciones no hayan pasado por
-un proceso de registro desde el \dpld orígen, por lo que se puede recibir un
+un proceso de registro desde el \dpld origen, por lo que se puede recibir un
 aviso de necesidad de registro, al cual reaccionará con un registro
 (\textit{unicast} o \textit{multicast} según el número de destinatarios de la
 operación).
@@ -168,9 +179,6 @@ Las operaciones que ofrece son:
 	\item[\texttt{getSliceNodesNumber (slice\_name)}] :\\
 		Permite obtener el numero de nodos que hay en un slice
 
-	\item[\texttt{getNodeSlices (node\_name)}] :\\
-		Permite obtener la lista de los slices de un nodo
-
 	\item[\texttt{getSliceNode (slice\_name, node\_name)}] :\\
 		Permite obtener información de un nodo de un slice
 
@@ -181,6 +189,9 @@ Las operaciones que ofrece son:
 		Permite obtener el nodo mas cercado de un slice
 		(aprovechándose, si se da el caso, de un sistema DNS con
 		soporte para ``localidad'').
+
+	\item[\texttt{getNodeSlices (node\_name)}] :\\
+		Permite obtener la lista de los slices de un nodo
 \end{description}
 
 Para obtener toda esta información, hace falta utilizar la API que ofrece
@@ -221,10 +232,10 @@ De modo que las operaciones que ofrece, son:
 		Permite cambiar las posibles opciones que permita la
 		implementación concreta del software multicast que usemos.
 
-	\item[\texttt{setOptions (group\_id, options[])}] :\\
+	\item[\texttt{getOptions (group\_id, options[])}] :\\
 		Permite obtener las posibles opciones que permita la
 		implementación concreta del software multicast que usemos.
-	
+
 	\item[\texttt{sendData (group\_id, data)}] :\\
 		Permite enviar datos a un grupo.
 
@@ -256,6 +267,8 @@ realizar ataques DoS desde cualquier máquina a la red.
 
 \section{\umcr}
 
+\nocite{RON}
+
 Estos nodos se encargan de hacer la transmisión multicast, con tal de hacer
 llegar los datos a los \umcc del grupo de destino.
 
@@ -267,10 +280,10 @@ fácilmente utilizar una implementación ya existente de una red overlay
 multicast en modo usuario
 
 En cuanto a las implementaciones, hemos encontrado varias \cite{Araneola, ESM,
-LMDD, LSAM}, pero consideramos que Araneola \cite{Araneola} se ajusta más a
-nuestras necesidades que las otras implementaciones por el hecho de haber sido
-diseñada para entornos dinámicos y con la fiabilidad en mente, además de ser un
-sistema de comunicación de M a N.
+LMDD, LSAM, nemo, nemo-res-p2p-mcast, stealth}, pero consideramos que Araneola
+\cite{Araneola} se ajusta más a nuestras necesidades que las otras
+implementaciones por el hecho de haber sido diseñada para entornos dinámicos y
+con la fiabilidad en mente, además de ser un sistema de comunicación de M a N.
 
 
 
@@ -281,11 +294,11 @@ aplicaciones de las que queremos hacer el despliegue), se sitúa en un
 slice propio (donde estarán todos los nodos con éste módulo), que
 consideraremos administrado correctamente (por lo que no habrá configuraciones
 ni modificaciones maliciosas) y al recibir los datos de \umcc accederá a sí
-mismo por ssh con tal de poner los ficheros al slice destino y seguidamente
+mismo por SSH con tal de poner los ficheros al slice destino y seguidamente
 ejecutar el shell script asociado, en caso de estar presente.
 
-Para realizar esta conexión por ssh, el nodo del slice \dplc necesita los datos
-de clave y password ssh para que \dplc pueda hacer una conexión a la propia
+Para realizar esta conexión por SSH, el nodo del slice \dplc necesita los datos
+de clave y password SSH para que \dplc pueda hacer una conexión a la propia
 máquina y acceder a la máquina virtual asociada al slice de destino.
 
 Para ello, se utiliza el proceso de registro descrito en el apartado
@@ -317,7 +330,7 @@ siguientes:
 	\item[\texttt{getFile (slice\_name, path)}] :\\
 		Hace una petición de un objeto del sistema de ficheros
 		del slice \texttt{slice\_name}.
-	
+
 	\item[\texttt{deleteFile (slice\_name, path, new\_version)}] :\\
 		Hace la petición de eliminación de un objeto del sistema de
 		ficheros (\texttt{path}) de todo el slice \texttt{slice\_name}.
@@ -329,9 +342,9 @@ siguientes:
 		Devuelve la versión que el nodo tiene del slice
 		\texttt{slice\_name}.
 
-	\item[\texttt{getKey (slice\_name, $K_{pub_{d}}$)}] :\\
-		Informa de la clave pública remota y devuelve la propia clave
-		pública.
+	\item[\texttt{getKey ($K_{pub}$)}] :\\
+		Informa de la propia clave pública y devuelve la clave
+		pública remota.
 
 	\item[\texttt{getSSH (slice\_name)}] :\\
 		Devuelve la clave y password SSH del slice \texttt{slice\_name}.
@@ -345,19 +358,19 @@ siguientes:
 		nodo emisor.
 
 	\item[\texttt{needDeploy (slice\_name, node\_name, path)}] :\\
-		Informa de la necesidad de \texttt{node\_name} de recibir un
+		Informa de la necesidad a \texttt{node\_name} de recibir un
 		deploy de \texttt{path} del slice \texttt{slice\_name}.
 
-	\item[\texttt{registerWithResponse (slice\_name, node\_name, $K_{SSH}$,
-		$P_{SSH}$, $K_{pub}$)}] :\\
-		Permite a \texttt{node\_name} registrarse en \dplc como
-		integrante del slice y devuelve un resultado para informar si
-		se ha podido realizar la conexión SSH.
-
-	\item[\texttt{register (slice\_name, node\_name, $K_{SSH}$, $P_{SSH}$,
+	\item[\texttt{registerWithResponse (slice\_name, $K_{SSH}$, $P_{SSH}$,
 		$K_{pub}$)}] :\\
+		Permite registrarse en un \dplc como integrante del slice emisor
+		y devuelve un resultado para informar si se ha podido realizar
+		la conexión SSH.
+
+	\item[\texttt{register (slice\_name, $K_{SSH}$, $P_{SSH}$, $K_{pub}$)}]
+		:\\
 		Permite a \texttt{node\_name} registrarse en \dplc como
-		integrante del slice.
+		integrante del slice emisor para realizar la conexión SSH.
 
 	\item[\texttt{joined (slice\_name)}] :\\
 		Informa de la adición del nodo al grupo multicast del slice
@@ -392,7 +405,7 @@ slice, se apaga \famon y se cierra la conexión SSH.
 monitorizar los ficheros que han sido desplegados en un nodo de un slice.
 
 Para ello debe haber una instancia corriendo en cada máquina virtual que
-corresponda a un slice que funciona a traves de \plfs, siendo arrancado por el
+corresponda a un slice que funciona a través de \plfs, siendo arrancado por el
 correspondiente \dplc en el momento en que hay algún \dpld registrado.
 
 Las operaciones que nos interesan son las siguientes:

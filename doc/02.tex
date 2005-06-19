@@ -31,7 +31,7 @@ componentes que necesitaría el sistema presentado (figura
 		componentes que permiten realizar las funcionalidades y
 		comunicaciones (en nuestro caso, sería \dpld).
 
-	% TODO: intercambiar dpld <--> dplc ?!?! tendria mas sentido?
+	% TODO: intercambiar dpld <--> dplc ?!?! tendría mas sentido?
 	\item [\dpld:] Deployer Daemon\\
 		Componente encargado de mandar las órdenes de despliegue y
 		mantener actualizada la visión que tiene el usuario sobre los
@@ -127,7 +127,7 @@ A continuación una explicación de los diferentes ficheros y directorios:
 		Este fichero contiene la clave privada del \dpld para que
 		funcione todo el sistema de seguridad (ver apartado
 		\ref{sect:segurity}).
-	
+
 	\item[\texttt{/plfs/slices/\textless{}slice\textgreater/backup}] :\\
 		Este fichero contiene una URI que indica el repositorio central
 		de backup donde se puedan encontrar los ficheros \texttt{shared}
@@ -135,7 +135,7 @@ A continuación una explicación de los diferentes ficheros y directorios:
 		sobre Redespliegue).
 
 	\item[\texttt{/plfs/slices/\textless{}slice\textgreater/key}] :\\
-		Este fichero contiene la clave privada ssh correspondiente al
+		Este fichero contiene la clave privada SSH correspondiente al
 		slice.
 
 	\item[\texttt{/plfs/slices/\textless{}slice\textgreater/passwd}] :\\
@@ -174,7 +174,7 @@ A continuación una explicación de los diferentes ficheros y directorios:
 		node\textgreater/version}] :\\
 		Este fichero contiene el número de version del último
 		despliegue (ver apartado \ref{sect:versioning}).
-		
+
 	\item[\texttt{/plfs/slices/\textless{}slice\textgreater/nodes/\textless{}
 		node\textgreater/unshared}] :\\
 		Éste directorio es propio de cada nodo en el contexto del slice
@@ -337,14 +337,14 @@ De modo que el sistema debe permitir:
 	\item Descubrimiento de slices en PlanetLab \\
 		Al acceder al sistema de ficheros (\kplfs-\uplfs), hay que
 		preguntar a un servicio de PlanetLab si existe o no un slice
-		dado (al hacer un move de un ejectuable a un directorio que es
+		dado (al hacer un move de un ejecutable a un directorio que es
 		un slice) o cuáles existen (al hacer un ls para ver los slices
 		disponibles).
 
 		Para ello, hace falta encontrar el nodo con el servicio de
 		PlanetLab de BD \textbf{más cercano} (por ahora solo hay uno, y
 		es \textit{PlanetLab Central}) y preguntarle:
-		
+
 		\begin{itemize}
 			\item si existe un slice concreto
 
@@ -366,9 +366,10 @@ cercano} que da un servicio concreto.
 
 Para ello, se podría utilizar un servicio DNS al estilo Akamai, tal como
 utiliza google, o algo como CoDNS \cite{CoDNS}, subproyecto de Codeen
-\cite{Codeen}, que nos dan la IP del nodo más cercano que proporciona un
-servicio conreto. Cabe notar, además, que éste es un servicio que PlanetLab
-planea dar a todos sus nodos y que tiene como tarea pendiente implementar.
+\cite{Codeen}, o PowerDNS \cite{PowerDNS} con su backend geográfico, que nos dan
+la IP del nodo más cercano que proporciona un servicio conreto. Cabe notar,
+además, que éste es un servicio que PlanetLab planea dar a todos sus nodos y que
+tiene como tarea pendiente implementar.
 
 Como el servicio de DNS se utiliza siempre de forma transparente, aunque dé un
 servicio no habitual de localidad, no lo pondremos en el esquema de nuestros
@@ -379,9 +380,13 @@ componentes para mejorar su claridad.
 \section{Lógica de Despliegue}
 \label{sect:deployment}
 
+\nocite{Bamboo}
+
 Después de pensar diferentes posibilidades sobre como el usuario podría llevar
-a cabo realmente el despliegue mediante el sistema de ficheros, hemos llegado
-a la conclusión de que el usuario deberá realizar los siguientes pasos:
+a cabo realmente el despliegue mediante el sistema de ficheros, y mirar
+otros proyectos dedicados al despliegue de aplicaciones \cite{PLSDT, RSTB,
+Stork}, u otras aplicaciones distribuidas para PlanetLab \cite{MON, NWS}, hemos
+llegado a la conclusión de que el usuario deberá realizar los siguientes pasos:
 
 \begin{enumerate}
 	\item El usuario realiza \texttt{mv/cp} de los ficheros que
@@ -395,7 +400,8 @@ a la conclusión de que el usuario deberá realizar los siguientes pasos:
 
 Además, y como es obvio dada la naturaleza del propio sistema de ficheros, se
 deberá cumplir la siguiente precondición antes de poder realizar el
-despliegue:\\
+despliegue:
+\\
 
 \textit{Precondición}: El slice destino está ya creado (ej: \texttt{mkdir}).\\
 
@@ -443,7 +449,7 @@ del sistema:
 	\item \umcc $\rightarrow$ \dplc \\
 		El módulo \umcc hace llegar los paquetes a desplegar al \dplc.
 
-	\item \dplc $\rightarrow$ slice destino (ssh) \\
+	\item \dplc $\rightarrow$ slice destino (SSH) \\
 		Se despliega la aplicación (se copian los ficheros), y una vez
 		hecho esto, se ejecuta el shell script (que es el último
 		fichero en llegar). Para ello, primero se desinstala la
@@ -454,12 +460,12 @@ del sistema:
 \end{enumerate}
 
 Como se ve en el apartado \ref{sect:redeployment}, no es necesario controlar
-los casos en que algun despliegue no se lleve a cabo en algún nodo, ya que
+los casos en que algún despliegue no se lleve a cabo en algún nodo, ya que
 entre ellos mismos se encargarán de mantener la coherencia del despliegue.
 
 El fichero \texttt{/plfs/slices/\textless{}slice\textgreater/status} contiene,
 para cada nodo del slice, si se ha podido contactar con él y, en caso
-afirmativo, en qué estado de despligue se encuentra el nodo.
+afirmativo, en qué estado de despliegue se encuentra el nodo.
 
 Esta información se deriva a través del contenido del acceso a los ficheros
 \texttt{/plfs/slices/\textless{}slice\textgreater/nodes/\textless{}
@@ -572,9 +578,9 @@ Existen dos casos en los que es necesario un redespliegue:
 		Será necesario realizar un redespliegue, si al volver al
 		grupo, el nodo detecta que hay una versión más nueva de
 		despliegue.
-	
+
 	\item[Modificación de ficheros] : \\
-		Cuando se produce una modificación incontrolada (que no viene 
+		Cuando se produce una modificación incontrolada (que no viene
 		de uno de los \dpld registrados) de los ficheros de un nodo al
 		que se le ha realizado un despliegue, y estos son de tipo
 		\textit{shared}, \famon se encarga de detectarlo y avisar a
@@ -614,7 +620,7 @@ El proceso de redespliegue (cuando sea necesario tal como hemos comentado
 antes) se realizará mediante los siguientes pasos:
 
 \begin{enumerate}
-	\item En caso de no tener los datos de ssh, \dplc se los pedirá a algún
+	\item En caso de no tener los datos de SSH, \dplc se los pedirá a algún
 		nodo de la lista para poder abrir las conexiones.
 
 	\item Una vez abiertas las conexiones, se pide un despliegue unicast a
@@ -649,7 +655,7 @@ Como mejora, sería interesante detectar qué nodos están en una misma subred, es
 decir, que forman parte de una misma institución y comparten una red mucho más
 rápida que Internet (ya sea por configuración manual o por detección a través
 de las interfícies configuradas), para así delegar un posible proceso de
-\textit{redeployment} de todo el grupo a un solo nodo, que luego haria el mismo
+\textit{redeployment} de todo el grupo a un solo nodo, que luego haría el mismo
 \textit{redeployment} al resto de nodos del grupo (hasta pudiendo así
 aprovecharse de las capacidades de multicast del nivel de enlace).
 
@@ -659,8 +665,8 @@ aprovecharse de las capacidades de multicast del nivel de enlace).
 \label{sect:security}
 
 Puesto que la autentificación de todos los clientes es obligatoria en
-PlanetLab, cada vez que un cliente (\dpld en uestro caso) intente una operación
-con un nodo (\dplc) con el que no está autentificado, deberá primero relizar
+PlanetLab, cada vez que un cliente (\dpld en nuestro caso) intente una operación
+con un nodo (\dplc) con el que no está autentificado, deberá primero realizar
 el proceso de autentificación.
 
 Dicho proceso va dirigido a proporcionar la clave y password SSH a los \dplc y
@@ -675,19 +681,19 @@ que son administrados por una única identidad de confianza, tienen todos un
 mismo par de llaves, que llamaremos $K_{pub_{c}}$ y $K_{priv_{c}}$.
 
 Para controlar que los datos recibidos en los \dplc proceden de un \dpld
-previamente autentificado, utilizaremos una firma eléctronica con
+previamente autentificado, utilizaremos una firma electrónica con
 $K_{priv_{d}}$ (puesto que los \dplc conocen $K_{pub_{d}}$).
 
 Los pasos a seguir son:
 
 \begin{enumerate}
-	\item Se consulta con \pldb y se escoge un nodo cualquiera 
+	\item Se consulta con \pldb y se escoge un nodo cualquiera
 		del slice con el que nos queremos comunicar.
 		\label{step:auth_get_node}
 
 	\item Se pide la clave pública del nodo seleccionado, $K_{pub_{c}}$, y
 		se le da la pública del \dpld, $K_{pub_{d}}$.\\
-		Si el nodo no responde, se vuleve al paso
+		Si el nodo no responde, se vuelve al paso
 		\ref{step:auth_get_node}).
 
 	\item Se hace una petición de registro unicast al nodo, con la clave y
@@ -695,7 +701,7 @@ Los pasos a seguir son:
 		$K_{pub_{d}}$ para el envío encriptado de datos sensibles
 		(listado de ficheros, etc.).\\
 		Si la operación falla, se aborta el proceso de registro.
-		Si el nodo no responde, se vuleve al paso
+		Si el nodo no responde, se vuelve al paso
 		\ref{step:auth_get_node}).
 
 	\item Se hace una petición de registro multicast al grupo, con la clave
@@ -710,7 +716,7 @@ llevada a cabo en un \dplc:
 	\item Se añade un nuevo nodo después de haber hecho el proceso de
 		registro, de modo que \dpld no está registrado en ese nodo.
 
-	\item \dplc cierra la conexión ssh por falta de operaciones durante
+	\item \dplc cierra la conexión SSH por falta de operaciones durante
 		cierto tiempo de \textit{timeout}, de modo que no se puede
 		hacer llegar las operaciones enviadas por \dpld.
 
@@ -728,17 +734,17 @@ Cabe notar que las conexiones que \dpld mantiene con los slices tienen un
 \textit{timeout} asociado, de modo que una vez expirado se perderán dichas
 conexiones y si posteriormente se quisiera realizar una operación en
 alguno de esos slices se deberá reiniciar de cero el proceso de registro
-(momento en el que se intentará revalidar los fiheros que tubiera cacheados el
+(momento en el que se intentará revalidar los ficheros que tuviera cacheados el
 \dpld).
 
-Ahora bien, \dplc no pierde los datos de conexión (clave y password ssh),
-puesto que como se explica en el apartado \ref{sect:redeployment}, éstos son
+Ahora bien, \dplc no pierde los datos de conexión (clave y password SSH),
+puesto que como se explica en el apartado \ref{sect:redeployment}, estos son
 necesarios para mantener la coherencia del slice.
 
-En el caso en que se hayan cambiado la clave y/o el password ssh y que la
-conexión ssh esté cerrada, el \dpld recibiría algunas operaciones de aviso (ver
+En el caso en que se hayan cambiado la clave y/o el password SSH y que la
+conexión SSH esté cerrada, el \dpld recibiría algunas operaciones de aviso (ver
 apartado \ref{sect:dpld}) procedentes de los \dplc destinatarios con la conexión
-ssh cerrada (que serán una minoría debido a la política de revalidación de
+SSH cerrada (que serán una minoría debido a la política de revalidación de
 registros comentada anteriormente).
 
 Como los datos desplegados por \dpld van firmados para evitar problemas de

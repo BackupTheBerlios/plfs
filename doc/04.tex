@@ -1,11 +1,10 @@
 \chapter{Comunicación entre los componentes}
 
-%TODO: señalar qué comunicaciones van encriptadas/desencriptadas
-
 \textbf{\textit{En este capítulo comentamos diferentes implementaciones de la
 comunicación entre componentes del sistema. Como veremos, nos centraremos en
 los tipos de mensajes en cada tipo de comunicación y la seguridad que debemos
 implementar en cada una, para asegurar autenticidad y confidencialidad.}}
+\\
 
 Las comunicaciones entre componentes de un mismo nodo funcionan a modo de
 llamadas ``normales'' entre partes de un mismo programa (aunque se carguen en
@@ -36,15 +35,16 @@ Para realizar esta comunicación de eventos, hay varias posibilidades:
 
 \begin{description}
 	\item [Dispositivo:]
-		Aprovecha las propias características de un dispositivo de sistema,
-		ya que permite hacer esperas no activas (es decir bloqueantes), a
-		través de \textit{poll}, \textit{read}, \textit{select} de un
-		dispositivo que implementa \kplfs.
+		Aprovecha las propias características de un dispositivo de
+		sistema, ya que permite hacer esperas no activas (es decir
+		bloqueantes), a través de \textit{poll}, \textit{read},
+		\textit{select} de un dispositivo que implementa \kplfs.
 
 	\item [Compartición de memoria:]
-		El problema de esta solución es que requiere una espera activa por
-		parte de \uplfs, que debe ir comprobando la zona de memoria compartida
-		para ver si hay algún nuevo evento procedente de \kplfs.
+		El problema de esta solución es que requiere una espera activa
+		por parte de \uplfs, que debe ir comprobando la zona de memoria
+		compartida para ver si hay algún nuevo evento procedente de
+		\kplfs.
 \end{description}
 
 Así pues, por las ventajas de operaciones no bloqueantes que ofrece,
@@ -54,55 +54,199 @@ Cuando se realice una operación (\texttt{ls},\texttt{mv}, etc) en el sistema
 de ficheros \plfs, el módulo de kernel \kplfs que implementa estas operaciones,
 deberá informar dichos eventos al módulo a nivel usuario \uplfs (el cual deberá
 realizar las operaciones pertinentes, comunicándose con los diferentes
-componentes disponibles).
+componentes disponibles y respondiendo a cada operación con su identificador
+\texttt{id}).
 
 En éste caso, aunque los componentes estén en el mismo nodo, deben enviarse
 mensajes a través del dispositivo de control, mensajes que tienen el mismo
 formato que se ha comentado al inicio del capítulo, pero sin el parámetro de
 \texttt{Remitente}.
+\\
+
+\kplfs $\rightarrow$ \uplfs:
+
+\begin{itemize}
+	\item \texttt{execute (component, id, operation, \ldots)}
+\end{itemize}
+
+\kplfs $\leftarrow$ \uplfs:
+
+\begin{itemize}
+	\item Operaciones para el retorno del resultado de las peticiones del
+		VFS a \uplfs (ver \cite{lkapi}).
+	\item \texttt{invalidate (slice\_name, node\_name, type, path)}
+\end{itemize}
 
 
 
-\section{\uplfs/\dpld $\rightarrow$ \pldb}
+\section{\uplfs/\dpld/\dplc $\rightarrow$ \pldb}
 
 Llamada interna de funciones.
+\\
+
+\uplfs/\dpld/\dplc $\rightarrow$ \pldb:
+
+\begin{itemize}
+	\item \texttt{getSlices ()}
+	\item \texttt{getNodes ()}
+	\item \texttt{getSliceNodes (slice\_name)}
+	\item \texttt{getSliceNodesAny (slice\_name, num)}
+	\item \texttt{getSliceNodesNumber (slice\_name)}
+	\item \texttt{getSliceNode (slice\_name, node\_name)}
+	\item \texttt{getSliceNodeAny (slice\_name)}
+	\item \texttt{getSliceNodeNearest (slice\_name)}
+	\item \texttt{getNodeSlices (node\_name)}
+\end{itemize}
 
 
 
 \section{\uplfs $\longleftrightarrow$ \dpld}
 
 Llamada interna de funciones.
+\\
+
+\uplfs $\rightarrow$ \dpld:
+
+\begin{itemize}
+	\item \texttt{deployToSlice (slice\_name, path\_from, path\_to)}
+	\item \texttt{deployToNode (slice\_name, node\_name, path\_from,
+		path\_to)}
+	\item \texttt{getInfoShared (slice\_name, path)}
+	\item \texttt{getInfoUnshared (slice\_name, node\_name, path)}
+	\item \texttt{getFileShared (slice\_name, path)}
+	\item \texttt{getFileUnshared (slice\_name, node\_name, path)}
+	\item \texttt{deleteFileShared (slice\_name, path)}
+	\item \texttt{deleteFileUnshared (slice\_name, node\_name, path)}
+	\item \texttt{getSliceNodeVersion (slice\_name, node\_name)}
+	\item \texttt{registerNeeded (slice\_name, node\_name)}
+\end{itemize}
+
+\uplfs $\leftarrow$ \dpld:
+
+\begin{itemize}
+	\item \texttt{invalidate (slice\_name, node\_name, type, path)}
+\end{itemize}
 
 
 
-\section{\dpld $\rightarrow$ \dplc}
-
-Todas las comunicaciones van cifradas con $K_{pub_{c}}$ (para asegurar que sólo
-los \dplc puedan leer los contenidos) y firmadas con $K_{priv_{d}}$ (para poder
-así comprovar su autenticidad).
-
-Luego, en el destino, se comprueba la firma, se descifran los datos y se
-procede a realizar la operación.
-
-
-
-\section{\dplc $\rightarrow$ \dpld}
+\section{\dpld $\longleftrightarrow$ \dplc}
 \label{sect:warnings}
 
-Todas las comunicaciones van cifradas con $K_{pub_{d}}$ (para asegurar que sólo
-los \dplc puedan leer los contenidos) y firmadas con $K_{priv_{c}}$ (para poder
-así comprovar su autenticidad).
+Teniendo en cuanta que cada componente tiene su propio par de llaves
+(un par $K_{pub_{d}}$ y $K_{priv_{d}}$ para cada \dpld y un mismo par
+$K_{pub_{c}}$ y $K_{priv_{c}}$ para todos los \dplc), todas las comunicaciones
+van cifradas con la clave pública del emisor (para asegurar que sólo
+los receptores puedan leer los contenidos) y firmadas con la clave
+privada del emisor (para poder así comprobar su autenticidad), excepto
+\texttt{getKey}, que sólo va firmada.
 
 Luego, en el destino, se comprueba la firma, se descifran los datos y se
-procede a realizar la operación.
+procede a realizar la operación pertinente.
+\\
+
+\dpld $\rightarrow$ \dplc:
+
+\begin{itemize}
+	\item \texttt{deployToSlice (slice\_name, path\_to, file, type,
+		new\_version)}
+	\item \texttt{getInfo (slice\_name, path)}
+	\item \texttt{getFile (slice\_name, path)}
+	\item \texttt{deleteFile (slice\_name, path, new\_version)}
+	\item \texttt{getVersion (slice\_name)}
+	\item \texttt{getKey ($K_{pub_{d}}$)}
+	\item \texttt{registerWithResponse (slice\_name, $K_{SSH}$, $P_{SSH}$,
+		$K_{pub}$)}
+	\item \texttt{register (slice\_name, $K_{SSH}$, $P_{SSH}$, $K_{pub}$)}
+\end{itemize}
+
+\dpld $\leftarrow$ \dplc:
+
+\begin{itemize}
+	\item \texttt{registerNeeded (slice\_name, node\_name)}
+	\item \texttt{invalidate (slice\_name, node\_name, type, path)}
+\end{itemize}
 
 
 
-\section{\dpld/\dplc $\rightarrow$ \umcc}
+\section{\dplc $\rightarrow$ \dplc}
+
+Como la red de \dplc intenta llegar sola a la coherencia de versiones, necesita
+ofrecer métodos para ponerse en contacto e intercambiar datos, cifrando y
+firmando con $K_{priv_{c}}$.
+
+\begin{itemize}
+	\item \texttt{deployToSlice (slice\_name, path\_to, file, type,
+		new\_version)}
+	\item \texttt{needDeploy (slice\_name, node\_name, path)}
+	\item \texttt{ping (slice\_name, node\_name, version)}
+	\item \texttt{getSSH (slice\_name)}
+\end{itemize}
+
+
+
+\section{\dpld/\dplc $\longleftrightarrow$ \umcc}
+
+Llamada interna de funciones.
 
 Cuando tanto \dpld como \dplc quieren comunicarse con un grupo (\dpld se
 comunica con el grupo de receptores del slice para mandarles operaciones y
 \dplc se comunica con el grupo de emisores para mandarles avisos), lo hacen a
 través de la red multicast, mediante el componente de entrada a ella que es
-\umcc, de forma que mandan los datos como si fueran directamente una de las dos
-comunicaciones anteriores y se transmiten transparentemente por la red \umc.
+\umcc, de forma que mandan los datos como si fueran directamente como la
+comunicación anterior y se transmiten transparentemente por la red \umc.
+\\
+
+\dpld/\dplc $\rightarrow$ \umcc:
+
+\begin{itemize}
+	\item \texttt{group\_id getGroup (group\_name)}
+	\item \texttt{setOptions (group\_id, options[])}
+	\item \texttt{getOptions (group\_id, options[])}
+	\item \texttt{sendData (group\_id, data)}
+	\item \texttt{recieveData (group\_id, data)}
+	\item \texttt{joinSender (group\_id, node\_name)}
+	\item \texttt{deleteSender (group\_id, node\_name)}
+	\item \texttt{joinReceiver (group\_id, node\_name)}
+	\item \texttt{deleteReceiver (group\_id, node\_name)}
+\end{itemize}
+
+Con tal de saber \dpld cuál es el estado de los slices, como la red multicast
+subyacente puede informar de la adición y eliminación de receptores, es el
+propio \umcc quien se encarga de avisar a \dpld (en lugar de \dplc, evitando así
+ocupar la red innecesariamente).
+\\
+
+\dpld $\leftarrow$ \umcc:
+
+\begin{itemize}
+	\item \texttt{addNodeToSlice (slice\_name, node\_name)}
+	\item \texttt{removeNodeFromSlice (slice\_name, node\_name)}
+\end{itemize}
+
+\dplc $\leftarrow$ \umcc son:
+
+\begin{itemize}
+	\item \texttt{joined (slice\_name)}
+	\item \texttt{deleted (slice\_name)}
+\end{itemize}
+
+
+
+\section{\dplc $\longleftrightarrow$ \famon}
+
+Llamada interna de funciones.
+\\
+
+\dplc $\rightarrow$ \famon:
+
+\begin{itemize}
+	\item \texttt{watch (path)}
+	\item \texttt{unwatch (path)}
+	\item \texttt{stop ()}
+\end{itemize}
+
+\dplc $\leftarrow$ \famon:
+
+\begin{itemize}
+	\item \texttt{invalidate (slice\_name, path)}
+\end{itemize}
